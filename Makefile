@@ -1,0 +1,287 @@
+VERSION ?= $(shell grep -E '^version[[:space:]]*=' pyproject.toml | sed 's/.*=[[:space:]]*"\(.*\)"/\1/')
+VENV = .venv
+
+.ONESHELL:
+.WAIT:
+
+DEBUG    ?= false
+VERBOSE  ?= false
+
+UV_FLAGS = -v
+RM_FLAGS := -rfv
+
+ifeq ($(DEBUG),true)
+    MAKEFLAGS += --debug=v
+    PYTEST_FLAGS := -vv
+else ifeq ($(VERBOSE),true)
+    PYTEST_FLAGS := -v
+else
+    MAKEFLAGS += --silent
+    PYTEST_FLAGS :=
+    UV_FLAGS = -q
+    RM_FLAGS := -rf
+endif
+
+PYTEST := pytest $(PYTEST_FLAGS)
+RM := rm $(RM_FLAGS)
+UV := uv $(UV_FLAGS)
+
+PRECOMMIT ?= pre-commit
+ifneq ($(shell command -v prek >/dev/null 2>&1 && echo y),)
+    PRECOMMIT := prek
+    ifneq ($(filter true,$(DEBUG) $(VERBOSE)),)
+        $(info Using prek for pre-commit checks)
+        ifeq ($(DEBUG),true)
+            PRECOMMIT := $(PRECOMMIT) -v
+        endif
+    endif
+endif
+
+# Terminal formatting (tput with fallbacks to ANSI codes)
+_COLOR  := $(shell tput sgr0 2>/dev/null || printf '\033[0m')
+BOLD    := $(shell tput bold 2>/dev/null || printf '\033[1m')
+CYAN    := $(shell tput setaf 6 2>/dev/null || printf '\033[0;36m')
+GREEN   := $(shell tput setaf 2 2>/dev/null || printf '\033[0;32m')
+RED     := $(shell tput setaf 1 2>/dev/null || printf '\033[0;31m')
+YELLOW  := $(shell tput setaf 3 2>/dev/null || printf '\033[0;33m')
+
+.DEFAULT_GOAL := help
+.PHONY: help
+help: ## Show this help message
+	@echo "$(BOLD)Available targets:$(_COLOR)"
+	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+        awk 'BEGIN {FS = ":.*?## "; max = 0} \
+            {if (length($$1) > max) max = length($$1)} \
+            {targets[NR] = $$0} \
+            END {for (i = 1; i <= NR; i++) { \
+                split(targets[i], arr, FS); \
+                printf "$(CYAN)%-*s$(_COLOR) %s\n", max + 2, arr[1], arr[2]}}'
+	@echo
+	@echo "$(BOLD)Environment variables:$(_COLOR)"
+	@echo "  $(YELLOW)DEBUG$(_COLOR) = true|false    Set to true to enable debug output (default: false)"
+	@echo "  $(YELLOW)VERBOSE$(_COLOR) = true|false  Set to true to enable verbose output (default: false)"
+
+.PHONY: install
+install: build/install-python-versions ## Install the project
+	$(UV) sync
+
+.PHONY: develop
+WITH_HOOKS ?= true
+develop: build/install-dev ## Install the project for development (WITH_HOOKS={true|false}, default=true)
+	@echo "Installing missing type stubs..." && \
+        $(UV) run mypy --install-types --non-interactive --follow-imports=silent > /dev/null 2>&1 || true
+	@if ! git config --local --get-all include.path | grep -q ".gitconfigs/alias"; then \
+        git config --local --add include.path "$(CURDIR)/.gitconfigs/alias"; \
+    fi
+	@git config blame.ignoreRevsFile .git-blame-ignore-revs
+	@set -e; \
+    if command -v git-lfs >/dev/null 2>&1; then \
+        git lfs install --local --skip-repo || true; \
+    fi; \
+    current_branch=$$(git branch --show-current); \
+    stash_was_needed=0; \
+    cleanup() { \
+        exit_code=$$?; \
+        if [ "$$current_branch" != "$$(git branch --show-current)" ]; then \
+            echo "$(YELLOW)Warning: Still on $$(git branch --show-current). Attempting to return to $$current_branch...$(_COLOR)"; \
+            if git switch "$$current_branch" 2>/dev/null; then \
+                echo "Successfully returned to $$current_branch"; \
+            else \
+                echo "$(YELLOW)Could not return to $$current_branch. You are on $$(git branch --show-current).$(_COLOR)"; \
+            fi; \
+        fi; \
+        if [ $$stash_was_needed -eq 1 ] && git stash list | head -1 | grep -q "Auto stash before switching to main"; then \
+            echo "$(YELLOW)Note: Your stashed changes are still available. Run 'git stash pop' to restore them.$(_COLOR)"; \
+        fi; \
+        exit $$exit_code; \
+    }; \
+    trap cleanup EXIT; \
+    if ! git diff --quiet || ! git diff --cached --quiet; then \
+        git stash push -m "Auto stash before switching to main"; \
+        stash_was_needed=1; \
+    fi; \
+    git switch main && git pull; \
+    if command -v git-lfs >/dev/null 2>&1; then \
+        git lfs pull || true; \
+    fi; \
+    git switch "$$current_branch"; \
+    if [ $$stash_was_needed -eq 1 ]; then \
+        if git stash apply; then \
+            git stash drop; \
+        else \
+            echo "$(RED)Error: Stash apply had conflicts. Resolve them, then run: git stash drop$(_COLOR)"; \
+        fi; \
+    fi; \
+    trap - EXIT
+	@if [ "$(WITH_HOOKS)" = "true" ]; then \
+        $(MAKE) enable-pre-commit; \
+    fi
+
+.PHONY: test
+PARALLEL ?= false
+test: build/install-test ## Run all tests with coverage (PARALLEL={true|false}, default=false)
+	@PYTEST_CMD="$(PYTEST)"; [ "$(PARALLEL)" = "true" ] && PYTEST_CMD="$$PYTEST_CMD -n auto"; \
+    $(UV) run $$PYTEST_CMD --cov=src --cov-report=term-missing
+
+.PHONY: check
+check: format-all test ## Run all code quality checks and tests
+
+################################
+## (post-|un|re)?installation ##
+################################
+
+.PHONY: uninstall
+uninstall: check-install-uv ## Uninstall the project
+	@echo "Uninstalling project..."
+	$(UV) pip uninstall .
+
+.PHONY: reinstall
+reinstall: uninstall install ## Reinstall the project
+
+.PHONY: reinstall-dev
+reinstall-dev: uninstall develop ## Reinstall the project for development (WITH_HOOKS={true|false}, default=true)
+
+.PHONY: clean
+TO_REMOVE := \
+    *.egg-info \
+    */.venv \
+    .coverage \
+    .eggs \
+    .git/hooks/commit-msg \
+    .git/hooks/pre-commit \
+    .git/hooks/pre-push \
+    .ipynb_checkpoints \
+    .mypy_cache \
+    .pytest_cache \
+    .ruff_cache \
+    __pycache__ \
+    build \
+    dist \
+    htmlcov \
+    node_modules
+clean: ## Remove build artifacts, caches, and temporary files
+	@echo "Cleaning up project directories..."
+	@if [ -n "$$VIRTUAL_ENV" ]; then deactivate; fi; \
+    echo $(TO_REMOVE) | xargs -n 1 -P 4 $(RM); \
+    find . -type d -name "__pycache__" -exec $(RM) {} +
+	@echo "Cleaned up project directories."
+	@$(RM) $(VENV)
+
+.PHONY: clean-uninstall
+clean-uninstall: clean uninstall ## Clean up project artifacts and uninstall the package
+
+.PHONY: clean-reinstall
+clean-reinstall: clean-uninstall .WAIT install ## Clean up project artifacts and reinstall the package
+
+.PHONY: clean-reinstall-dev
+clean-reinstall-dev: clean-uninstall .WAIT develop ## Clean up project artifacts and reinstall the package for development (WITH_HOOKS={true|false}, default=true)
+
+##################
+## code quality ##
+##################
+
+.PHONY: format-all
+format-all: ## Run code-quality checks and format the code
+	-$(MAKE) run-pre-commit
+	@$(MAKE) format-unsafe
+
+.PHONY: ruff-format
+ruff-format: build/install-dev ## Format the code with Ruff
+	$(UV) run ruff format
+	@echo "$(BOLD)$(GREEN)Code formatting complete!$(_COLOR)"
+
+.PHONY: lint
+lint: build/install-dev ## Lint the code with Ruff, fixing issues where possible
+	$(UV) run ruff check --fix
+	@$(MAKE) .display-lint-complete
+
+.PHONY: lint-unsafe
+lint-unsafe: build/install-dev ## Lint the code with Ruff, fixing issues where possible with --unsafe-fixes
+	$(UV) run ruff check --fix --unsafe-fixes --exit-zero
+	@$(MAKE) .display-lint-complete
+
+.PHONY: format
+format: lint .WAIT ruff-format ## Format the code with Ruff
+
+.PHONY: format-unsafe
+format-unsafe: lint-unsafe .WAIT ruff-format ## Format the code with Ruff using --unsafe-fixes
+
+.PHONY: .display-lint-complete
+.display-lint-complete: ## Display a message when linting is complete
+	@echo "$(BOLD)$(YELLOW)Linting complete!$(_COLOR)"
+
+.PHONY: enable-pre-commit
+enable-pre-commit: ## Enable pre-commit hooks (along with commit-msg and pre-push hooks)
+	@if command -v pre-commit >/dev/null 2>&1; then \
+        $(UV) run pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push --hook-type prepare-commit-msg ; \
+    else \
+        echo "$(YELLOW)Warning: pre-commit is not installed. Skipping hook installation.$(_COLOR)"; \
+        echo "Install it with: pip install pre-commit (or brew install pre-commit on macOS)"; \
+    fi
+
+.PHONY: run-pre-commit
+run-pre-commit: build/install-dev ## Run the pre-commit checks
+	$(UV) run $(PRECOMMIT) run --all-files
+
+###########################
+## development shortcuts ##
+###########################
+
+.PHONY: check-install-uv
+check-install-uv: ## Check if uv is installed
+	@set -e; \
+    command -v uv >/dev/null 2>&1 || { \
+        echo "$(BOLD)$(RED)installing uv$(RESET)"; \
+        curl -LsSf https://astral.sh/uv/install.sh | sh; \
+    }
+
+.PHONY: bust-ci-cache
+bust-ci-cache: ## Bust the CI cache
+	@CACHE_BUSTER=.github/workflows/.cache-buster && \
+    date > $$CACHE_BUSTER && \
+    git add $$CACHE_BUSTER && \
+    git commit -m "ci: bust cache on $$(date +'%Y-%m-%d %H:%M')"
+
+.PHONY: push-test
+push-test: build ## Publish the package to TestPyPI using Poetry
+	@$(UV) publish --index testpypi && echo "Package published to TestPyPI!"
+
+.PHONY: push-prod
+push-prod: build ## Publish the package to PyPI using Poetry
+	@$(UV) publish && echo "Package published to PyPI!"
+
+##############
+## building ##
+##############
+
+.PHONY: build
+CACHE ?= true
+build: check-install-uv clean ## Build the package using uv (CACHE={true|false}, default=true)
+	$(UV) build $(if $(filter false,$(CACHE)),--no-cache,) && echo "Package built successfully!"
+
+MARKER_FILE = build/$(VERSION).marker
+
+$(MARKER_FILE):
+	@echo "$(BOLD)$(YELLOW)You are on new prerequisites $(VERSION)! Removing build markers before rebuilding$(_COLOR)"
+	@$(RM) build
+	@$(MAKE) MARKER_FILE= > /dev/null
+	@mkdir -p $(@D)
+	@touch $@
+
+include $(MARKER_FILE)
+
+build/install-dev: build/install-deps
+	$(UV) sync --only-dev
+	touch $@
+
+build/install-test: build/install-deps
+	$(UV) sync --only-group test
+	touch $@
+
+build/install-deps: build/install-python-versions
+	$(UV) sync --no-editable --no-install-project
+	mkdir -p $(dir $@) && touch $@
+
+.PHONY: build/install-python-versions
+build/install-python-versions: check-install-uv
+	$(UV) python install $(shell cat .python-version)

@@ -1,0 +1,51 @@
+# Repository Instructions for GitHub Copilot
+
+This is a placeholder file for GitHub Copilot instructions.
+
+## 1) High‑Level Details
+
+- **Language:** Python (>=3.11)
+- **Dependency Management:** `uv` (manages `.venv` in project root).
+- **Task Runner:** `Makefile` is the primary entry point for all development tasks.
+
+## 2) Build and Validation Information
+
+- **Run All Checks:** `make check` (runs linting, type checking, and tests).
+- **Testing:** `make test` (runs `pytest` with coverage).
+- **Linting:** `make lint` (runs `ruff check`).
+- **Formatting:** `make format` (runs `ruff format`).
+- **Execution:** Always use `uv run <command>` to ensure execution within the virtual environment.
+
+## 3) Project Layout and Architecture
+
+- `src/`: Source code for the package.
+- `tests/`: Unit and integration tests.
+- `pyproject.toml`: Project configuration, dependencies, and tool settings.
+- `uv.lock`: Exact dependency versions.
+- `.github/`: CI/CD workflows and templates.
+
+## 4) Conventional Commits and Contribution Workflow
+
+### Commit Messages
+
+Follow **Conventional Commits** format: `<type>(<scope>): <subject>`
+
+- **Types:** `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
+- **Imperative Mood:** Write subjects as commands (e.g., "add feature" not "added feature")
+- **Lowercase Start:** The first word after the colon should be lowercase (unless it's a proper noun, acronym, etc.)
+- **Summary Length:** Keep the subject line under 51 characters (≤50)
+- **Body Line Length:** Wrap body text at 72 characters
+- **Atomic Commits:** One logical change per commit
+
+- **Recommended Workflow:**
+
+  1. **Setup:** `make develop`
+  2. **Develop:** Write code and tests (TDD encouraged).
+  3. **Verify:** Run `make check` before committing.
+  4. **Changelog:** Managed via `git cliff` (based on conventional commits).
+
+- **Documentation Sync:** Ensure `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.github/instructions/CI.instructions.md`, and `README.md` are kept updated and synced with code changes.
+
+---
+
+Note to GitHub Copilot: Please trust these instructions and only perform additional searches if the information provided is incomplete or found to be in error.
