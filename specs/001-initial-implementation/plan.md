@@ -28,16 +28,16 @@ Technical approach follows TDD methodology with pure functions for parsing, isol
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Compliance | Evidence |
-|-----------|------------|----------|
-| **I. TDD** | ✅ Pass | Tests written before implementation per spec §8.0; coverage ≥80% in SC-004 |
-| **II. Simplicity** | ✅ Pass | Single package structure, TinyDB (no server), single HTML (no build step) |
-| **III. Resumability** | ✅ Pass | FR-006, FR-007 mandate checkpointing and SIGINT handling |
-| **IV. Rate Limit Respect** | ✅ Pass | FR-008, FR-009, FR-010 define proactive rate limiting |
-| **V. Data Transparency** | ✅ Pass | FR-023, US4 require methodology disclosure on visualization |
-| **VI. Accessibility First** | ✅ Pass | FR-024 to FR-027 mandate colorblind-safe palette, WCAG AA, keyboard nav |
+| Principle                   | Compliance | Evidence                                                                   |
+| --------------------------- | ---------- | -------------------------------------------------------------------------- |
+| **I. TDD**                  | ✅ Pass    | Tests written before implementation per spec §8.0; coverage ≥80% in SC-004 |
+| **II. Simplicity**          | ✅ Pass    | Single package structure, TinyDB (no server), single HTML (no build step)  |
+| **III. Resumability**       | ✅ Pass    | FR-006, FR-007 mandate checkpointing and SIGINT handling                   |
+| **IV. Rate Limit Respect**  | ✅ Pass    | FR-008, FR-009, FR-010 define proactive rate limiting                      |
+| **V. Data Transparency**    | ✅ Pass    | FR-023, US4 require methodology disclosure on visualization                |
+| **VI. Accessibility First** | ✅ Pass    | FR-024 to FR-027 mandate colorblind-safe palette, WCAG AA, keyboard nav    |
 
 **Gate Status**: ✅ PASSED — All 6 principles satisfied. Proceed to Phase 0.
 
@@ -94,12 +94,12 @@ docs/
 
 > No violations. All choices align with Constitution Principle II (Simplicity).
 
-| Choice | Justification |
-|--------|---------------|
-| TinyDB over SQLite | JSON files can be git-committed; no database server needed |
-| Single HTML over SPA | No build step; direct GitHub Pages deployment |
-| Sync httpx over async | Simpler debugging; rate limits already throttle throughput |
-| Polars over pandas | Faster aggregation; better type support; aligns with AGENTS.md |
+| Choice                | Justification                                                  |
+| --------------------- | -------------------------------------------------------------- |
+| TinyDB over SQLite    | JSON files can be git-committed; no database server needed     |
+| Single HTML over SPA  | No build step; direct GitHub Pages deployment                  |
+| Sync httpx over async | Simpler debugging; rate limits already throttle throughput     |
+| Polars over pandas    | Faster aggregation; better type support; aligns with AGENTS.md |
 
 ## Module Dependency Order
 

@@ -39,15 +39,15 @@ Represents a single collection execution with status, timestamps, and aggregate 
 
 ### Attributes
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `run_id` | `str` | ✓ | Unique identifier: `run_{ISO8601_timestamp}` |
-| `started_at` | `datetime` | ✓ | Collection start time (ISO 8601) |
-| `completed_at` | `datetime \| None` | | Collection end time (null if in progress) |
-| `status` | `RunStatus` | ✓ | Current state: `running`, `completed`, `failed` |
-| `repos_processed` | `int` | ✓ | Total repositories attempted |
-| `repos_qualified` | `int` | ✓ | Repositories with valid commit data |
-| `total_commits_analyzed` | `int` | ✓ | Sum of commits across all repos |
+| Field                    | Type               | Required | Description                                     |
+| ------------------------ | ------------------ | -------- | ----------------------------------------------- |
+| `run_id`                 | `str`              | ✓        | Unique identifier: `run_{ISO8601_timestamp}`    |
+| `started_at`             | `datetime`         | ✓        | Collection start time (ISO 8601)                |
+| `completed_at`           | `datetime \| None` |          | Collection end time (null if in progress)       |
+| `status`                 | `RunStatus`        | ✓        | Current state: `running`, `completed`, `failed` |
+| `repos_processed`        | `int`              | ✓        | Total repositories attempted                    |
+| `repos_qualified`        | `int`              | ✓        | Repositories with valid commit data             |
+| `total_commits_analyzed` | `int`              | ✓        | Sum of commits across all repos                 |
 
 ### State Transitions
 
@@ -104,29 +104,29 @@ Captures data about a single analyzed repository including commit type counts.
 
 ### Attributes
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `run_id` | `str` | ✓ | Foreign key to Run |
-| `repo` | `str` | ✓ | Full name: `owner/repo` |
-| `default_branch` | `str` | ✓ | Branch analyzed (e.g., `main`) |
-| `head_commit` | `str` | ✓ | SHA of latest commit at collection time |
-| `stars` | `int` | ✓ | Star count at collection time |
-| `language` | `str \| None` | | Primary language (may be null) |
-| `created_at` | `datetime` | ✓ | Repository creation date |
-| `license` | `str \| None` | | SPDX license identifier |
-| `timestamp` | `datetime` | ✓ | When this record was created |
-| `commits_analyzed` | `int` | ✓ | Number of conventional commits found |
-| `build` | `int` | ✓ | Count of `build:` commits |
-| `chore` | `int` | ✓ | Count of `chore:` commits |
-| `ci` | `int` | ✓ | Count of `ci:` commits |
-| `docs` | `int` | ✓ | Count of `docs:` commits |
-| `feat` | `int` | ✓ | Count of `feat:` commits |
-| `fix` | `int` | ✓ | Count of `fix:` commits |
-| `perf` | `int` | ✓ | Count of `perf:` commits |
-| `refactor` | `int` | ✓ | Count of `refactor:` commits |
-| `revert` | `int` | ✓ | Count of `revert:` commits |
-| `style` | `int` | ✓ | Count of `style:` commits |
-| `test` | `int` | ✓ | Count of `test:` commits |
+| Field              | Type          | Required | Description                             |
+| ------------------ | ------------- | -------- | --------------------------------------- |
+| `run_id`           | `str`         | ✓        | Foreign key to Run                      |
+| `repo`             | `str`         | ✓        | Full name: `owner/repo`                 |
+| `default_branch`   | `str`         | ✓        | Branch analyzed (e.g., `main`)          |
+| `head_commit`      | `str`         | ✓        | SHA of latest commit at collection time |
+| `stars`            | `int`         | ✓        | Star count at collection time           |
+| `language`         | `str \| None` |          | Primary language (may be null)          |
+| `created_at`       | `datetime`    | ✓        | Repository creation date                |
+| `license`          | `str \| None` |          | SPDX license identifier                 |
+| `timestamp`        | `datetime`    | ✓        | When this record was created            |
+| `commits_analyzed` | `int`         | ✓        | Number of conventional commits found    |
+| `build`            | `int`         | ✓        | Count of `build:` commits               |
+| `chore`            | `int`         | ✓        | Count of `chore:` commits               |
+| `ci`               | `int`         | ✓        | Count of `ci:` commits                  |
+| `docs`             | `int`         | ✓        | Count of `docs:` commits                |
+| `feat`             | `int`         | ✓        | Count of `feat:` commits                |
+| `fix`              | `int`         | ✓        | Count of `fix:` commits                 |
+| `perf`             | `int`         | ✓        | Count of `perf:` commits                |
+| `refactor`         | `int`         | ✓        | Count of `refactor:` commits            |
+| `revert`           | `int`         | ✓        | Count of `revert:` commits              |
+| `style`            | `int`         | ✓        | Count of `style:` commits               |
+| `test`             | `int`         | ✓        | Count of `test:` commits                |
 
 ### Validation Rules
 
@@ -175,19 +175,19 @@ Stores resumption state for interrupted collection runs.
 
 ### Attributes
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `key` | `str` | ✓ | Progress key: `run_id`, `search_cursor`, `last_repo` |
-| `value` | `str \| dict` | ✓ | Progress value (type depends on key) |
-| `updated_at` | `datetime` | ✓ | When this checkpoint was saved |
+| Field        | Type          | Required | Description                                          |
+| ------------ | ------------- | -------- | ---------------------------------------------------- |
+| `key`        | `str`         | ✓        | Progress key: `run_id`, `search_cursor`, `last_repo` |
+| `value`      | `str \| dict` | ✓        | Progress value (type depends on key)                 |
+| `updated_at` | `datetime`    | ✓        | When this checkpoint was saved                       |
 
 ### Progress Keys
 
-| Key | Value Type | Description |
-|-----|------------|-------------|
-| `run_id` | `str` | Current run identifier |
-| `search_cursor` | `{stars_range: str, page: int}` | Position in search pagination |
-| `last_repo` | `str` | Last fully-processed repository name |
+| Key             | Value Type                      | Description                          |
+| --------------- | ------------------------------- | ------------------------------------ |
+| `run_id`        | `str`                           | Current run identifier               |
+| `search_cursor` | `{stars_range: str, page: int}` | Position in search pagination        |
+| `last_repo`     | `str`                           | Last fully-processed repository name |
 
 ### Validation Rules
 
@@ -207,7 +207,7 @@ Stores resumption state for interrupted collection runs.
     },
     "2": {
       "key": "search_cursor",
-      "value": {"stars_range": "500..1000", "page": 3},
+      "value": { "stars_range": "500..1000", "page": 3 },
       "updated_at": "2026-01-12T04:15:00Z"
     },
     "3": {
@@ -227,39 +227,39 @@ The visualization-consumable format containing aggregated commit type counts.
 
 ### Attributes
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `run_id` | `str` | ✓ | Source run identifier |
-| `generated_at` | `datetime` | ✓ | Export timestamp |
-| `total_repos` | `int` | ✓ | Number of repositories in aggregation |
-| `total_commits` | `int` | ✓ | Total conventional commits counted |
-| `counts` | `CommitTypeCounts` | ✓ | Aggregated counts per type |
-| `methodology` | `Methodology` | ✓ | Collection methodology metadata |
+| Field           | Type               | Required | Description                           |
+| --------------- | ------------------ | -------- | ------------------------------------- |
+| `run_id`        | `str`              | ✓        | Source run identifier                 |
+| `generated_at`  | `datetime`         | ✓        | Export timestamp                      |
+| `total_repos`   | `int`              | ✓        | Number of repositories in aggregation |
+| `total_commits` | `int`              | ✓        | Total conventional commits counted    |
+| `counts`        | `CommitTypeCounts` | ✓        | Aggregated counts per type            |
+| `methodology`   | `Methodology`      | ✓        | Collection methodology metadata       |
 
 ### CommitTypeCounts (nested)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `build` | `int` | Aggregated build commits |
-| `chore` | `int` | Aggregated chore commits |
-| `ci` | `int` | Aggregated ci commits |
-| `docs` | `int` | Aggregated docs commits |
-| `feat` | `int` | Aggregated feat commits |
-| `fix` | `int` | Aggregated fix commits |
-| `perf` | `int` | Aggregated perf commits |
+| Field      | Type  | Description                 |
+| ---------- | ----- | --------------------------- |
+| `build`    | `int` | Aggregated build commits    |
+| `chore`    | `int` | Aggregated chore commits    |
+| `ci`       | `int` | Aggregated ci commits       |
+| `docs`     | `int` | Aggregated docs commits     |
+| `feat`     | `int` | Aggregated feat commits     |
+| `fix`      | `int` | Aggregated fix commits      |
+| `perf`     | `int` | Aggregated perf commits     |
 | `refactor` | `int` | Aggregated refactor commits |
-| `revert` | `int` | Aggregated revert commits |
-| `style` | `int` | Aggregated style commits |
-| `test` | `int` | Aggregated test commits |
+| `revert`   | `int` | Aggregated revert commits   |
+| `style`    | `int` | Aggregated style commits    |
+| `test`     | `int` | Aggregated test commits     |
 
 ### Methodology (nested)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `min_stars` | `int` | Minimum star filter used |
-| `max_commits_per_repo` | `int` | Maximum commits analyzed per repo |
-| `time_window_days` | `int` | Days of commit history analyzed |
-| `excluded` | `list[str]` | List of exclusion criteria |
+| Field                  | Type        | Description                       |
+| ---------------------- | ----------- | --------------------------------- |
+| `min_stars`            | `int`       | Minimum star filter used          |
+| `max_commits_per_repo` | `int`       | Maximum commits analyzed per repo |
+| `time_window_days`     | `int`       | Days of commit history analyzed   |
+| `excluded`             | `list[str]` | List of exclusion criteria        |
 
 ### JSON Schema (docs/data.json)
 
@@ -441,6 +441,7 @@ class ExportData(BaseModel):
 **Rule**: Keep only the 3 most recent completed runs.
 
 **On Run Completion**:
+
 1. Mark run as `completed` or `failed`
 2. Query all runs, sort by `started_at` descending
 3. Identify runs beyond the 3rd most recent

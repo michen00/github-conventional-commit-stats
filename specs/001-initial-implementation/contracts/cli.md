@@ -17,6 +17,7 @@ uv run conv-commit-stats [COMMAND] [OPTIONS]
 **Package**: `conv_commit_stats`
 **Module**: `conv_commit_stats.cli:app`
 **pyproject.toml entry**:
+
 ```toml
 [project.scripts]
 conv-commit-stats = "conv_commit_stats.cli:app"
@@ -28,18 +29,19 @@ conv-commit-stats = "conv_commit_stats.cli:app"
 
 Available on all commands:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option      | Type   | Default  | Description                  |
+| ----------- | ------ | -------- | ---------------------------- |
 | `--db-path` | `PATH` | `./data` | Override data directory path |
-| `--help` | flag | | Show help and exit |
-| `--version` | flag | | Show version and exit |
+| `--help`    | flag   |          | Show help and exit           |
+| `--version` | flag   |          | Show version and exit        |
 
 **Environment Variables**:
-| Variable | Description |
-|----------|-------------|
-| `GITHUB_TOKEN` | **Required**. GitHub API token (PAT or Actions token) |
-| `CCC_DB_PATH` | Override data directory (same as `--db-path`) |
-| `CCC_LOG_LEVEL` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+
+| Variable        | Description                                           |
+| --------------- | ----------------------------------------------------- |
+| `GITHUB_TOKEN`  | **Required**. GitHub API token (PAT or Actions token) |
+| `CCC_DB_PATH`   | Override data directory (same as `--db-path`)         |
+| `CCC_LOG_LEVEL` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR`    |
 
 ---
 
@@ -55,13 +57,14 @@ uv run conv-commit-stats collect [OPTIONS]
 
 **Options**:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--max-repos` | `INT` | `1000` | Maximum repositories to process |
-| `--min-stars` | `INT` | `3` | Minimum star count filter |
-| `--resume` | flag | `false` | Resume from last checkpoint |
+| Option        | Type  | Default | Description                     |
+| ------------- | ----- | ------- | ------------------------------- |
+| `--max-repos` | `INT` | `1000`  | Maximum repositories to process |
+| `--min-stars` | `INT` | `3`     | Minimum star count filter       |
+| `--resume`    | flag  | `false` | Resume from last checkpoint     |
 
 **Behavior**:
+
 - Creates new run with `status=running`
 - Discovers repos via GitHub Search API (star-range bucketing)
 - For each repo: fetches commits, parses types, saves record
@@ -71,6 +74,7 @@ uv run conv-commit-stats collect [OPTIONS]
 - On error: marks run `failed`, exits 1
 
 **Output** (stdout):
+
 ```
 Starting collection run: run_2026-01-12T04:00:00Z
 [1/1000] facebook/react: 100 commits (feat: 25, fix: 18, ...)
@@ -80,10 +84,11 @@ Collection complete: 847 repos qualified, 84700 commits analyzed
 ```
 
 **Exit Codes**:
-| Code | Meaning |
-|------|---------|
-| 0 | Success or graceful interrupt |
-| 1 | Error (rate limit exhausted, network failure, etc.) |
+
+| Code | Meaning                                             |
+| ---- | --------------------------------------------------- |
+| 0    | Success or graceful interrupt                       |
+| 1    | Error (rate limit exhausted, network failure, etc.) |
 
 ---
 
@@ -97,18 +102,20 @@ uv run conv-commit-stats export [OPTIONS]
 
 **Options**:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--run` | `TEXT` | `latest` | Run ID to export (or `latest`) |
-| `--output` | `PATH` | `docs/data.json` | Output file path |
+| Option     | Type   | Default          | Description                    |
+| ---------- | ------ | ---------------- | ------------------------------ |
+| `--run`    | `TEXT` | `latest`         | Run ID to export (or `latest`) |
+| `--output` | `PATH` | `docs/data.json` | Output file path               |
 
 **Behavior**:
+
 - Loads specified run (or most recent completed run)
 - Aggregates commit counts across all repos
 - Generates JSON with counts and methodology
 - Writes to output path
 
 **Output** (stdout):
+
 ```
 Exporting run: run_2026-01-12T04:00:00Z
 Aggregating 847 repositories...
@@ -116,10 +123,11 @@ Written to: docs/data.json
 ```
 
 **Exit Codes**:
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | No completed runs found / invalid run ID |
+
+| Code | Meaning                                  |
+| ---- | ---------------------------------------- |
+| 0    | Success                                  |
+| 1    | No completed runs found / invalid run ID |
 
 ---
 
@@ -133,11 +141,12 @@ uv run conv-commit-stats validate [OPTIONS]
 
 **Options**:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--run` | `TEXT` | `all` | Run ID to validate (or `all`) |
+| Option  | Type   | Default | Description                   |
+| ------- | ------ | ------- | ----------------------------- |
+| `--run` | `TEXT` | `all`   | Run ID to validate (or `all`) |
 
 **Checks Performed**:
+
 1. JSON files parse correctly
 2. All repos reference existing runs (referential integrity)
 3. No negative counts
@@ -147,6 +156,7 @@ uv run conv-commit-stats validate [OPTIONS]
 7. `docs/data.json` exists and parses (if present)
 
 **Output** (stdout):
+
 ```
 Validating run: run_2026-01-12T04:00:00Z
 ✓ Schema validity: OK
@@ -157,6 +167,7 @@ All checks passed.
 ```
 
 **Output** (on failure):
+
 ```
 Validating run: run_2026-01-12T04:00:00Z
 ✓ Schema validity: OK
@@ -165,10 +176,11 @@ Validating run: run_2026-01-12T04:00:00Z
 ```
 
 **Exit Codes**:
-| Code | Meaning |
-|------|---------|
-| 0 | All checks passed |
-| 1 | One or more checks failed |
+
+| Code | Meaning                   |
+| ---- | ------------------------- |
+| 0    | All checks passed         |
+| 1    | One or more checks failed |
 
 ---
 
@@ -183,11 +195,13 @@ uv run conv-commit-stats status
 **Options**: None (uses global options only)
 
 **Behavior**:
+
 - Shows current run status (if running)
 - Shows most recent completed run summary
 - Shows checkpoint state (for `--resume` decision)
 
 **Output** (stdout):
+
 ```
 Current Run: run_2026-01-12T04:00:00Z (running)
   Progress: 523/1000 repos processed
@@ -201,9 +215,10 @@ Most Recent Completed: run_2026-01-01T04:00:00Z
 ```
 
 **Exit Codes**:
-| Code | Meaning |
-|------|---------|
-| 0 | Always (informational command) |
+
+| Code | Meaning                        |
+| ---- | ------------------------------ |
+| 0    | Always (informational command) |
 
 ---
 
@@ -217,12 +232,13 @@ uv run conv-commit-stats prune [OPTIONS]
 
 **Options**:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--keep` | `INT` | `3` | Number of recent runs to retain |
-| `--dry-run` | flag | `false` | Show what would be deleted |
+| Option      | Type  | Default | Description                     |
+| ----------- | ----- | ------- | ------------------------------- |
+| `--keep`    | `INT` | `3`     | Number of recent runs to retain |
+| `--dry-run` | flag  | `false` | Show what would be deleted      |
 
 **Behavior**:
+
 - Lists all completed runs sorted by `started_at`
 - Identifies runs beyond the `--keep` threshold
 - Deletes run metadata from `runs.json`
@@ -230,6 +246,7 @@ uv run conv-commit-stats prune [OPTIONS]
 - Clears progress if it references deleted run
 
 **Output** (stdout):
+
 ```
 Pruning runs (keeping 3 most recent)...
 Deleting: run_2025-10-01T04:00:00Z (523 repos)
@@ -238,9 +255,10 @@ Pruned 2 runs, 1021 repo records.
 ```
 
 **Exit Codes**:
-| Code | Meaning |
-|------|---------|
-| 0 | Success (or nothing to prune) |
+
+| Code | Meaning                       |
+| ---- | ----------------------------- |
+| 0    | Success (or nothing to prune) |
 
 ---
 
@@ -248,21 +266,21 @@ Pruned 2 runs, 1021 repo records.
 
 ### Common Error Messages
 
-| Error | Cause | Resolution |
-|-------|-------|------------|
-| `GITHUB_TOKEN not set` | Missing env var | Set `GITHUB_TOKEN` environment variable |
-| `Rate limit exceeded` | API quota exhausted | Wait for reset or use `--resume` later |
-| `Run not found: {id}` | Invalid run ID | Use `status` to list available runs |
-| `No completed runs` | Export with no data | Run `collect` first |
-| `Data directory not found` | Bad `--db-path` | Check path exists or omit for default |
+| Error                      | Cause               | Resolution                              |
+| -------------------------- | ------------------- | --------------------------------------- |
+| `GITHUB_TOKEN not set`     | Missing env var     | Set `GITHUB_TOKEN` environment variable |
+| `Rate limit exceeded`      | API quota exhausted | Wait for reset or use `--resume` later  |
+| `Run not found: {id}`      | Invalid run ID      | Use `status` to list available runs     |
+| `No completed runs`        | Export with no data | Run `collect` first                     |
+| `Data directory not found` | Bad `--db-path`     | Check path exists or omit for default   |
 
 ### Signal Handling
 
-| Signal | Behavior |
-|--------|----------|
-| `SIGINT` (Ctrl+C) | Finish current repo, save progress, exit 0 |
-| `SIGTERM` | Same as SIGINT |
-| `SIGKILL` | Immediate termination (progress may be lost) |
+| Signal            | Behavior                                     |
+| ----------------- | -------------------------------------------- |
+| `SIGINT` (Ctrl+C) | Finish current repo, save progress, exit 0   |
+| `SIGTERM`         | Same as SIGINT                               |
+| `SIGKILL`         | Immediate termination (progress may be lost) |
 
 ---
 

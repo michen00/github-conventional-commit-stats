@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "Conventional Commit Census: A self-updating GitHub Pages site that visualizes the frequency of conventional commit types across popular public repositories"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - View Commit Type Distribution (Priority: P1)
 
@@ -99,7 +99,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - What happens when a user accesses the page on a slow connection?
   - Visualization gracefully loads with placeholder until data arrives
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -164,7 +164,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 - **Export Data**: The visualization-consumable format containing aggregated commit type counts, total repositories, total commits, collection timestamp, and methodology metadata.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

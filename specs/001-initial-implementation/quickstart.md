@@ -162,13 +162,13 @@ docs/
 
 ## CLI Reference
 
-| Command | Description |
-|---------|-------------|
-| `collect` | Discover repos and gather commit statistics |
-| `export` | Generate visualization-ready JSON |
-| `validate` | Verify data integrity |
-| `status` | Show current progress/statistics |
-| `prune` | Clean up old runs |
+| Command    | Description                                 |
+| ---------- | ------------------------------------------- |
+| `collect`  | Discover repos and gather commit statistics |
+| `export`   | Generate visualization-ready JSON           |
+| `validate` | Verify data integrity                       |
+| `status`   | Show current progress/statistics            |
+| `prune`    | Clean up old runs                           |
 
 See `uv run conv-commit-stats COMMAND --help` for detailed options.
 
