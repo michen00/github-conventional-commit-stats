@@ -8,7 +8,7 @@ This module handles:
 See §2 of the spec for rate limit handling.
 """
 
-__all__ = ("GitHubClient",)
+__all__ = ('GitHubClient',)
 
 
 class GitHubClient:

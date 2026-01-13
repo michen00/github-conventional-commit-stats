@@ -9,7 +9,7 @@ This module coordinates:
 See §1 of the spec for collection logic.
 """
 
-__all__ = ("Collector",)
+__all__ = ('Collector',)
 
 
 class Collector:
