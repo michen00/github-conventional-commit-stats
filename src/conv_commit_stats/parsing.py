@@ -9,9 +9,9 @@ See §1.3 and §1.4 of the spec for patterns and test cases.
 """
 
 __all__ = (
-    "is_conventional_commit",
-    "extract_type",
-    "is_bot",
+    'extract_type',
+    'is_bot',
+    'is_conventional_commit',
 )
 
 
