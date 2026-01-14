@@ -178,7 +178,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **SC-002**: Collection command processes up to 1000 repositories within 6 hours when using standard rate limits
 - **SC-003**: Collection can be interrupted at any point and resume without re-processing already-completed repositories
 - **SC-004**: Test coverage for the collection logic is at least 80%
-- **SC-005**: All CLI commands complete successfully with `--help` providing clear usage instructions
+- **SC-005**: All CLI commands complete successfully with `--help` displaying command description, all options with types/defaults, and at least one usage example
 - **SC-006**: Visualization is navigable using only keyboard (tab, enter, escape)
 - **SC-007**: Visualization passes automated accessibility contrast checks (WCAG AA)
 - **SC-008**: Monthly automated workflow completes successfully with updated data deployed
