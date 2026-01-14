@@ -373,7 +373,16 @@ class Storage:
             return None
 
         progress = Progress.model_validate(result[0])
-        return progress.value
+        value = progress.value
+
+        # If value is a dict (from JSON), try to deserialize as SearchCursor
+        if isinstance(value, dict) and key == "search_cursor":
+            try:
+                return SearchCursor(**value)
+            except (TypeError, ValueError):
+                return value
+
+        return value
 
     def clear_progress(self) -> None:
         """Clear all progress data."""

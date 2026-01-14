@@ -120,19 +120,19 @@
 
 ### Collector Tests
 
-- [ ] T039 [P] [US2] Write tests for repository discovery flow in tests/test_collector.py
-- [ ] T040 [P] [US2] Write tests for commit parsing orchestration in tests/test_collector.py
-- [ ] T041 [P] [US2] Write tests for checkpoint save/resume in tests/test_collector.py
-- [ ] T042 [P] [US2] Write tests for SIGINT/SIGTERM handling in tests/test_collector.py
+- [x] T039 [P] [US2] Write tests for repository discovery flow in tests/test_collector.py
+- [x] T040 [P] [US2] Write tests for commit parsing orchestration in tests/test_collector.py
+- [x] T041 [P] [US2] Write tests for checkpoint save/resume in tests/test_collector.py
+- [x] T042 [P] [US2] Write tests for SIGINT/SIGTERM handling in tests/test_collector.py
 
 ### Collector Implementation
 
-- [ ] T043 [US2] Implement Collector class with dependency injection in src/conv_commit_stats/collector.py
-- [ ] T044 [US2] Implement discover_repositories() with star-range bucketing in src/conv_commit_stats/collector.py
-- [ ] T045 [US2] Implement process_repository() with commit fetching and parsing in src/conv_commit_stats/collector.py
-- [ ] T046 [US2] Implement run() method with checkpoint saves after each repo in src/conv_commit_stats/collector.py
-- [ ] T047 [US2] Implement signal handler for graceful SIGINT/SIGTERM in src/conv_commit_stats/collector.py
-- [ ] T048 [US2] Implement resume logic from progress checkpoint in src/conv_commit_stats/collector.py
+- [x] T043 [US2] Implement Collector class with dependency injection in src/conv_commit_stats/collector.py
+- [x] T044 [US2] Implement discover_repositories() with star-range bucketing in src/conv_commit_stats/collector.py
+- [x] T045 [US2] Implement process_repository() with commit fetching and parsing in src/conv_commit_stats/collector.py
+- [x] T046 [US2] Implement run() method with checkpoint saves after each repo in src/conv_commit_stats/collector.py
+- [x] T047 [US2] Implement signal handler for graceful SIGINT/SIGTERM in src/conv_commit_stats/collector.py
+- [x] T048 [US2] Implement resume logic from progress checkpoint in src/conv_commit_stats/collector.py
 
 ### CLI Tests
 
