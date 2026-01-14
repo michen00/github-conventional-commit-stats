@@ -450,3 +450,37 @@ class ExportData(BaseModel):
 6. Historical data remains accessible via git history
 
 **Invariant**: At most 3 completed runs exist in storage at any time.
+
+---
+
+## 8. Storage Edge Cases & Error Handling
+
+### Missing vs Empty Storage Files
+
+| Scenario | Behavior |
+|----------|----------|
+| File does not exist | Create new empty TinyDB table; proceed normally |
+| File exists but is empty (0 bytes) | Treat as corrupted; log warning and recreate |
+| File exists with valid JSON `{}` | Valid empty table; proceed normally |
+| File exists with invalid JSON | Treat as corrupted (see below) |
+
+### Corrupted Progress File Handling
+
+When `progress.json` is corrupted (invalid JSON, missing required keys, or fails schema validation):
+
+1. Log warning with specific corruption details
+2. **If `--resume` flag was used**: Exit with error code 1 and message: "Progress file corrupted. Run without --resume to start fresh collection."
+3. **If fresh collection (no `--resume`)**: Delete corrupted progress file and start new collection
+4. **Never silently ignore corruption** - always inform the user
+
+### Schema Migration Policy
+
+**Current Policy**: No automatic schema migration.
+
+**Rationale**: This is a demo project with TinyDB storage. Schema changes between versions are handled by:
+
+1. Existing data remains valid (additive changes only)
+2. Breaking changes are avoided in minor releases
+3. If breaking changes are necessary: document in CHANGELOG and advise users to `prune --keep 0` before upgrading
+
+**Future Consideration**: If schema migration becomes necessary, implement via a `migrate` CLI command that transforms data in-place with backup.

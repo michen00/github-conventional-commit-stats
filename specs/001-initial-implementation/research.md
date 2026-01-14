@@ -195,6 +195,66 @@ BOT_PATTERNS = [
 - Dark/light theme support via CSS custom properties
 - Colorblind-safe IBM Design palette
 
+### Animation Specifications
+
+| Animation | Duration | Easing |
+|-----------|----------|--------|
+| Legend toggle (show/hide bar) | 250ms | ease-out |
+| Hover highlight | 150ms | ease-in-out |
+| Theme transition | 200ms | ease |
+| Initial chart load | 400ms | ease-out |
+
+### Theme Persistence
+
+**localStorage Key**: `ccc-theme-preference`
+
+**Values**:
+- `"system"` - Follow system preference (default)
+- `"dark"` - Force dark theme
+- `"light"` - Force light theme
+
+**Toggle Cycle**: system → dark → light → system
+
+### Color Palette (IBM Design Language - Colorblind Safe)
+
+| Commit Type | Light Theme | Dark Theme | Hex |
+|-------------|-------------|------------|-----|
+| feat | Blue 60 | Blue 50 | `#0043ce` / `#4589ff` |
+| fix | Red 60 | Red 50 | `#da1e28` / `#fa4d56` |
+| docs | Teal 60 | Teal 50 | `#007d79` / `#08bdba` |
+| chore | Gray 60 | Gray 50 | `#6f6f6f` / `#8d8d8d` |
+| refactor | Purple 60 | Purple 50 | `#8a3ffc` / `#a56eff` |
+| test | Green 60 | Green 50 | `#198038` / `#42be65` |
+| ci | Cyan 60 | Cyan 50 | `#0072c3` / `#33b1ff` |
+| build | Magenta 60 | Magenta 50 | `#d02670` / `#ee5396` |
+| style | Orange 60 | Orange 50 | `#ba4e00` / `#ff832b` |
+| perf | Yellow 60 | Yellow 40 | `#b28600` / `#d2a106` |
+| revert | Cool Gray 60 | Cool Gray 50 | `#4d5358` / `#697077` |
+
+### Accessibility: Screen Reader Support
+
+**Live Region Announcements** (using `aria-live="polite"`):
+
+| Event | Announcement |
+|-------|--------------|
+| Chart loaded | "Commit type distribution chart loaded. {total} commits across {repos} repositories." |
+| Legend item toggled ON | "{type} commits shown. {count} commits, {percent}% of total." |
+| Legend item toggled OFF | "{type} commits hidden." |
+| Theme changed | "Theme changed to {theme} mode." |
+| Data load error | "Unable to load data. Please try again later." |
+
+### Accessibility: Focus Management
+
+| Interaction | Focus Behavior |
+|-------------|----------------|
+| Tab through legend | Focus moves to each legend item in order |
+| Enter on legend item | Toggle visibility, focus remains on item |
+| Escape on legend item | No action (focus remains) |
+| Tab past last legend item | Focus moves to methodology section |
+| After theme toggle | Focus remains on toggle button |
+
+**Focus Indicators**: 2px solid outline using theme accent color, 2px offset
+
 ---
 
 ## 8. GitHub Search API Pagination Strategy

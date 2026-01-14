@@ -98,6 +98,10 @@ The system automatically runs the collection, export, and deployment pipeline mo
   - Validate command detects issues and reports specific errors
 - What happens when a user accesses the page on a slow connection?
   - Visualization gracefully loads with placeholder until data arrives
+- What happens when data.json fails to load (404, network error, invalid JSON)?
+  - Visualization displays a friendly error message with instructions to check back later
+- What happens when some repositories fail during collection (partial failure)?
+  - Failed repos are logged and skipped; collection continues with remaining repos; run completes as `completed` (not `failed`) if at least one repo succeeded
 
 ## Requirements _(mandatory)_
 
@@ -105,7 +109,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 **Data Collection**
 
-- **FR-001**: System MUST discover repositories using GitHub Search API with filters: ≥3 stars, pushed within 1 year, public, not archived, not a fork, has license
+- **FR-001**: System MUST discover repositories using GitHub Search API with filters: ≥3 stars, pushed within rolling 365-day window from collection start, public, not archived, not a fork, has license
 - **FR-002**: System MUST analyze up to 100 conventional commits per repository from the last year
 - **FR-003**: System MUST skip merge commits, empty commits, and commits from bot authors when counting
 - **FR-004**: System MUST recognize exactly 11 conventional commit types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
@@ -150,9 +154,11 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 **Automation**
 
-- **FR-028**: CI workflow MUST run collection on a monthly schedule
+- **FR-028**: CI workflow MUST run collection on a monthly schedule (cron: `0 4 1 * *` - 4 AM UTC on the 1st of each month)
 - **FR-029**: CI workflow MUST automatically commit updated data and trigger deployment
 - **FR-030**: CI workflow MUST validate data integrity and auto-revert on validation failure
+- **FR-031**: CI workflow MUST use conventional commit format for automated commits: `chore(data): update conventional commit statistics`
+- **FR-032**: CI workflow MUST support manual triggering via `workflow_dispatch` for ad-hoc updates
 
 ### Key Entities
 

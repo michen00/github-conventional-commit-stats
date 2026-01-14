@@ -65,6 +65,7 @@ uv run conv-commit-stats collect [OPTIONS]
 
 **Behavior**:
 
+- **Concurrency Check**: Before starting, verify no other run has `status=running`. If a running run exists, exit with error: "Another collection is in progress (run_id). Use --resume to continue or wait for it to complete."
 - Creates new run with `status=running`
 - Discovers repos via GitHub Search API (star-range bucketing)
 - For each repo: fetches commits, parses types, saves record
@@ -266,13 +267,27 @@ Pruned 2 runs, 1021 repo records.
 
 ### Common Error Messages
 
-| Error                      | Cause               | Resolution                              |
-| -------------------------- | ------------------- | --------------------------------------- |
-| `GITHUB_TOKEN not set`     | Missing env var     | Set `GITHUB_TOKEN` environment variable |
-| `Rate limit exceeded`      | API quota exhausted | Wait for reset or use `--resume` later  |
-| `Run not found: {id}`      | Invalid run ID      | Use `status` to list available runs     |
-| `No completed runs`        | Export with no data | Run `collect` first                     |
-| `Data directory not found` | Bad `--db-path`     | Check path exists or omit for default   |
+| Error                           | Cause                 | Resolution                              |
+| ------------------------------- | --------------------- | --------------------------------------- |
+| `GITHUB_TOKEN not set`          | Missing env var       | Set `GITHUB_TOKEN` environment variable |
+| `Rate limit exceeded`           | API quota exhausted   | Wait for reset or use `--resume` later  |
+| `Run not found: {id}`           | Invalid run ID        | Use `status` to list available runs     |
+| `No completed runs`             | Export with no data   | Run `collect` first                     |
+| `Data directory not found`      | Bad `--db-path`       | Check path exists or omit for default   |
+| `Another collection in progress`| Concurrent run attempt| Wait for existing run or use `--resume` |
+| `Progress file corrupted`       | Invalid progress.json | Run without `--resume` to start fresh   |
+
+### Rate Limit Sleep Behavior
+
+When the system sleeps due to rate limit exhaustion:
+
+1. Calculate sleep duration from `X-RateLimit-Reset` header
+2. Log: "Rate limit reached. Sleeping until {reset_time} ({duration} remaining)"
+3. **Re-check remaining quota after wake**: If reset occurred during sleep and quota is now available, continue immediately
+4. **If still limited**: Re-calculate sleep time and continue waiting
+5. Log: "Rate limit reset. Resuming collection."
+
+This prevents unnecessary waiting if the reset happens earlier than expected (e.g., due to clock skew).
 
 ### Signal Handling
 
