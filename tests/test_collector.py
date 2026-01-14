@@ -53,7 +53,9 @@ class TestCollectorBasics:
         ]
         return client
 
-    def test_collector_initialization(self, tmp_db_path: Path, mock_github_client):
+    def test_collector_initialization(
+        self, tmp_db_path: Path, mock_github_client
+    ) -> None:
         """Collector can be initialized with storage and GitHub client."""
         storage = Storage(tmp_db_path)
         collector = Collector(
@@ -66,7 +68,7 @@ class TestCollectorBasics:
         assert collector.min_stars == 3
         storage.close()
 
-    def test_discover_repositories(self, tmp_db_path: Path, mock_github_client):
+    def test_discover_repositories(self, tmp_db_path: Path, mock_github_client) -> None:
         """Collector can discover repositories using GitHub search."""
         with Storage(tmp_db_path) as storage:
             collector = Collector(
@@ -82,7 +84,7 @@ class TestCollectorBasics:
             assert repos[0]['full_name'] == 'facebook/react'
             mock_github_client.search_repositories.assert_called()
 
-    def test_process_repository(self, tmp_db_path: Path, mock_github_client):
+    def test_process_repository(self, tmp_db_path: Path, mock_github_client) -> None:
         """Collector can process a single repository and parse commits."""
         with Storage(tmp_db_path) as storage:
             # Create a run first
@@ -130,10 +132,9 @@ class TestRepositoryDiscovery:
     @pytest.fixture
     def mock_github_client(self):
         """Mock GitHubClient with configurable responses."""
-        client = MagicMock()
-        return client
+        return MagicMock()
 
-    def test_star_range_bucketing(self, tmp_db_path: Path, mock_github_client):
+    def test_star_range_bucketing(self, tmp_db_path: Path, mock_github_client) -> None:
         """Collector uses star-range bucketing for search pagination."""
         with Storage(tmp_db_path) as storage:
             # Mock responses for different star ranges
@@ -164,12 +165,14 @@ class TestRepositoryDiscovery:
                 min_stars=3,
             )
 
-            repos = collector.discover_repositories()
+            collector.discover_repositories()
 
             # Should have called search with different star ranges
             assert call_count > 0
 
-    def test_respects_max_repos_limit(self, tmp_db_path: Path, mock_github_client):
+    def test_respects_max_repos_limit(
+        self, tmp_db_path: Path, mock_github_client
+    ) -> None:
         """Collector stops after reaching max_repos limit."""
         with Storage(tmp_db_path) as storage:
             # Return many repos
@@ -188,7 +191,7 @@ class TestRepositoryDiscovery:
 
             assert len(repos) <= 10
 
-    def test_filters_by_min_stars(self, tmp_db_path: Path, mock_github_client):
+    def test_filters_by_min_stars(self, tmp_db_path: Path, mock_github_client) -> None:
         """Collector filters repositories by minimum star count."""
         with Storage(tmp_db_path) as storage:
             mock_github_client.search_repositories.return_value = [
@@ -247,7 +250,9 @@ class TestCommitProcessing:
         ]
         return client
 
-    def test_parses_conventional_commits(self, tmp_db_path: Path, mock_github_client):
+    def test_parses_conventional_commits(
+        self, tmp_db_path: Path, mock_github_client
+    ) -> None:
         """Collector correctly parses conventional commit types."""
         with Storage(tmp_db_path) as storage:
             run = Run(
@@ -282,7 +287,9 @@ class TestCommitProcessing:
             assert record.fix == 1
             assert record.commits_analyzed == 2  # Merge commit excluded
 
-    def test_excludes_merge_commits(self, tmp_db_path: Path, mock_github_client):
+    def test_excludes_merge_commits(
+        self, tmp_db_path: Path, mock_github_client
+    ) -> None:
         """Collector excludes merge commits (2+ parents)."""
         with Storage(tmp_db_path) as storage:
             run = Run(
@@ -316,7 +323,7 @@ class TestCommitProcessing:
             # Should have 2 commits (feat + fix), merge commit excluded
             assert record.commits_analyzed == 2
 
-    def test_excludes_bot_commits(self, tmp_db_path: Path):
+    def test_excludes_bot_commits(self, tmp_db_path: Path) -> None:
         """Collector excludes commits from bot authors."""
         mock_client = MagicMock()
         mock_client.get_commits.return_value = [
@@ -373,7 +380,9 @@ class TestCommitProcessing:
             assert record.commits_analyzed == 1
             assert record.fix == 1
 
-    def test_respects_max_commits_per_repo(self, tmp_db_path: Path, mock_github_client):
+    def test_respects_max_commits_per_repo(
+        self, tmp_db_path: Path, mock_github_client
+    ) -> None:
         """Collector limits commits per repository."""
         # Return 200 commits
         mock_github_client.get_commits.return_value = [
@@ -426,7 +435,7 @@ class TestCommitProcessing:
 class TestCheckpointing:
     """Test checkpoint save and resume functionality."""
 
-    def test_saves_checkpoint_after_each_repo(self, tmp_db_path: Path):
+    def test_saves_checkpoint_after_each_repo(self, tmp_db_path: Path) -> None:
         """Collector saves checkpoint after processing each repository."""
         mock_client = MagicMock()
         mock_client.search_repositories.return_value = [
@@ -458,7 +467,7 @@ class TestCheckpointing:
 
             collector.complete_collection(run_id)
 
-    def test_can_resume_from_checkpoint(self, tmp_db_path: Path):
+    def test_can_resume_from_checkpoint(self, tmp_db_path: Path) -> None:
         """Collector can resume from a saved checkpoint."""
         mock_client = MagicMock()
         mock_client.search_repositories.return_value = [
@@ -502,7 +511,7 @@ class TestCheckpointing:
 class TestSignalHandling:
     """Test graceful shutdown on SIGINT/SIGTERM."""
 
-    def test_handles_sigint_gracefully(self, tmp_db_path: Path):
+    def test_handles_sigint_gracefully(self, tmp_db_path: Path) -> None:
         """Collector saves progress and exits gracefully on SIGINT."""
         mock_client = MagicMock()
         mock_client.search_repositories.return_value = [
@@ -536,7 +545,7 @@ class TestSignalHandling:
 
             collector.complete_collection(run_id)
 
-    def test_handles_sigterm_gracefully(self, tmp_db_path: Path):
+    def test_handles_sigterm_gracefully(self, tmp_db_path: Path) -> None:
         """Collector saves progress and exits gracefully on SIGTERM."""
         mock_client = MagicMock()
         mock_client.search_repositories.return_value = []
@@ -565,7 +574,7 @@ class TestSignalHandling:
 class TestErrorHandling:
     """Test error handling during collection."""
 
-    def test_continues_on_individual_repo_failure(self, tmp_db_path: Path):
+    def test_continues_on_individual_repo_failure(self, tmp_db_path: Path) -> None:
         """Collector continues processing if one repo fails."""
         mock_client = MagicMock()
         mock_client.search_repositories.return_value = [
@@ -595,7 +604,8 @@ class TestErrorHandling:
             call_count += 1
             if call_count == 1:
                 return []  # repo-good succeeds
-            raise Exception('API error')  # repo-bad fails
+            msg = 'API error'
+            raise Exception(msg)  # repo-bad fails
 
         mock_client.get_commits.side_effect = commits_side_effect
 
@@ -615,7 +625,7 @@ class TestErrorHandling:
 
             collector.complete_collection(run_id)
 
-    def test_handles_rate_limit_errors(self, tmp_db_path: Path):
+    def test_handles_rate_limit_errors(self, tmp_db_path: Path) -> None:
         """Collector handles rate limit errors gracefully."""
         from conv_commit_stats.github_client import RateLimitExceeded
 

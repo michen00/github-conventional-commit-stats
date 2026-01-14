@@ -1,790 +1,869 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Visualize conventional commit type frequencies across popular GitHub repositories">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Visualize conventional commit type frequencies across popular GitHub repositories"
+    />
     <title>Conventional Commit Census</title>
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <style>
-        /* CSS Custom Properties for theming */
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f4f4f4;
-            --text-primary: #161616;
-            --text-secondary: #525252;
-            --border-color: #e0e0e0;
-            --focus-color: #0f62fe;
-            --link-color: #0043ce;
+      /* CSS Custom Properties for theming */
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f4f4f4;
+        --text-primary: #161616;
+        --text-secondary: #525252;
+        --border-color: #e0e0e0;
+        --focus-color: #0f62fe;
+        --link-color: #0043ce;
 
-            /* IBM Design Language Colors - Light Theme */
-            --color-feat: #0043ce;
-            --color-fix: #da1e28;
-            --color-docs: #007d79;
-            --color-chore: #6f6f6f;
-            --color-refactor: #8a3ffc;
-            --color-test: #198038;
-            --color-ci: #0072c3;
-            --color-build: #d02670;
-            --color-style: #ba4e00;
-            --color-perf: #b28600;
-            --color-revert: #4d5358;
+        /* IBM Design Language Colors - Light Theme */
+        --color-feat: #0043ce;
+        --color-fix: #da1e28;
+        --color-docs: #007d79;
+        --color-chore: #6f6f6f;
+        --color-refactor: #8a3ffc;
+        --color-test: #198038;
+        --color-ci: #0072c3;
+        --color-build: #d02670;
+        --color-style: #ba4e00;
+        --color-perf: #b28600;
+        --color-revert: #4d5358;
+      }
+
+      [data-theme="dark"] {
+        --bg-primary: #161616;
+        --bg-secondary: #262626;
+        --text-primary: #f4f4f4;
+        --text-secondary: #a8a8a8;
+        --border-color: #393939;
+        --focus-color: #4589ff;
+        --link-color: #78a9ff;
+
+        /* IBM Design Language Colors - Dark Theme */
+        --color-feat: #4589ff;
+        --color-fix: #fa4d56;
+        --color-docs: #08bdba;
+        --color-chore: #8d8d8d;
+        --color-refactor: #a56eff;
+        --color-test: #42be65;
+        --color-ci: #33b1ff;
+        --color-build: #ee5396;
+        --color-style: #ff832b;
+        --color-perf: #d2a106;
+        --color-revert: #697077;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          "IBM Plex Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        transition:
+          background-color 200ms ease,
+          color 200ms ease;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .theme-toggle {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 200ms ease;
+      }
+
+      .theme-toggle:hover {
+        background: var(--border-color);
+      }
+
+      .theme-toggle:focus {
+        outline: 2px solid var(--focus-color);
+        outline-offset: 2px;
+      }
+
+      .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      #chart-container {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        min-height: 500px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        justify-content: center;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 250ms ease-out;
+        font-size: 0.875rem;
+      }
+
+      .legend-item:hover {
+        background: var(--border-color);
+      }
+
+      .legend-item:focus {
+        outline: 2px solid var(--focus-color);
+        outline-offset: 2px;
+      }
+
+      .legend-item[aria-pressed="false"] {
+        opacity: 0.5;
+      }
+
+      .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+      }
+
+      .methodology {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .methodology h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+      }
+
+      .methodology-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .methodology-item h3 {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .methodology-item p {
+        color: var(--text-primary);
+      }
+
+      .methodology-item ul {
+        list-style: none;
+        color: var(--text-primary);
+      }
+
+      .methodology-item li::before {
+        content: "✓ ";
+        color: var(--color-test);
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem 0;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      footer a {
+        color: var(--link-color);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      footer a:focus {
+        outline: 2px solid var(--focus-color);
+        outline-offset: 2px;
+      }
+
+      /* Loading State */
+      .loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        color: var(--text-secondary);
+      }
+
+      .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid var(--border-color);
+        border-top-color: var(--focus-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
+      }
 
-        [data-theme="dark"] {
-            --bg-primary: #161616;
-            --bg-secondary: #262626;
-            --text-primary: #f4f4f4;
-            --text-secondary: #a8a8a8;
-            --border-color: #393939;
-            --focus-color: #4589ff;
-            --link-color: #78a9ff;
+      /* Error State */
+      .error {
+        text-align: center;
+        padding: 3rem;
+        color: var(--color-fix);
+      }
 
-            /* IBM Design Language Colors - Dark Theme */
-            --color-feat: #4589ff;
-            --color-fix: #fa4d56;
-            --color-docs: #08bdba;
-            --color-chore: #8d8d8d;
-            --color-refactor: #a56eff;
-            --color-test: #42be65;
-            --color-ci: #33b1ff;
-            --color-build: #ee5396;
-            --color-style: #ff832b;
-            --color-perf: #d2a106;
-            --color-revert: #697077;
-        }
+      .error h2 {
+        margin-bottom: 1rem;
+      }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+      .error p {
+        color: var(--text-secondary);
+      }
 
-        body {
-            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            transition: background-color 200ms ease, color 200ms ease;
-        }
+      /* Screen reader only */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
 
+      /* Live region for announcements */
+      #live-region {
+        position: absolute;
+        left: -10000px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      }
+
+      @media (max-width: 768px) {
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 1rem;
+          padding: 1rem;
         }
 
         h1 {
-            font-size: 2rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .theme-toggle {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 200ms ease;
-        }
-
-        .theme-toggle:hover {
-            background: var(--border-color);
-        }
-
-        .theme-toggle:focus {
-            outline: 2px solid var(--focus-color);
-            outline-offset: 2px;
-        }
-
-        .stats-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
+          font-size: 1.5rem;
         }
 
         .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
+          font-size: 2rem;
         }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        #chart-container {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            min-height: 500px;
-        }
-
-        .legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-            justify-content: center;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 250ms ease-out;
-            font-size: 0.875rem;
-        }
-
-        .legend-item:hover {
-            background: var(--border-color);
-        }
-
-        .legend-item:focus {
-            outline: 2px solid var(--focus-color);
-            outline-offset: 2px;
-        }
-
-        .legend-item[aria-pressed="false"] {
-            opacity: 0.5;
-        }
-
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-        }
-
-        .methodology {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .methodology h2 {
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-
-        .methodology-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .methodology-item h3 {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .methodology-item p {
-            color: var(--text-primary);
-        }
-
-        .methodology-item ul {
-            list-style: none;
-            color: var(--text-primary);
-        }
-
-        .methodology-item li::before {
-            content: "✓ ";
-            color: var(--color-test);
-        }
-
-        footer {
-            text-align: center;
-            padding: 2rem 0;
-            border-top: 1px solid var(--border-color);
-            color: var(--text-secondary);
-        }
-
-        footer a {
-            color: var(--link-color);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        footer a:focus {
-            outline: 2px solid var(--focus-color);
-            outline-offset: 2px;
-        }
-
-        /* Loading State */
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px;
-            color: var(--text-secondary);
-        }
-
-        .loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--focus-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Error State */
-        .error {
-            text-align: center;
-            padding: 3rem;
-            color: var(--color-fix);
-        }
-
-        .error h2 {
-            margin-bottom: 1rem;
-        }
-
-        .error p {
-            color: var(--text-secondary);
-        }
-
-        /* Screen reader only */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        /* Live region for announcements */
-        #live-region {
-            position: absolute;
-            left: -10000px;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .stat-value {
-                font-size: 2rem;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Live region for screen reader announcements -->
     <div id="live-region" aria-live="polite" aria-atomic="true"></div>
 
     <div class="container">
-        <header>
-            <h1>Conventional Commit Census</h1>
-            <button
-                class="theme-toggle"
-                id="theme-toggle"
-                aria-label="Toggle color theme"
-                title="Toggle between system, dark, and light themes"
-            >
-                <span id="theme-icon">🌙</span>
-                <span id="theme-label">System</span>
-            </button>
-        </header>
+      <header>
+        <h1>Conventional Commit Census</h1>
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          aria-label="Toggle color theme"
+          title="Toggle between system, dark, and light themes"
+        >
+          <span id="theme-icon">🌙</span>
+          <span id="theme-label">System</span>
+        </button>
+      </header>
 
-        <div id="loading" class="loading">
-            <div class="loading-spinner" role="status" aria-label="Loading data"></div>
-            <p>Loading commit statistics...</p>
+      <div id="loading" class="loading">
+        <div
+          class="loading-spinner"
+          role="status"
+          aria-label="Loading data"
+        ></div>
+        <p>Loading commit statistics...</p>
+      </div>
+
+      <div id="error" class="error" style="display: none" role="alert">
+        <h2>Unable to Load Data</h2>
+        <p>Please try again later or check the repository for updates.</p>
+      </div>
+
+      <main id="main-content" style="display: none">
+        <div
+          class="stats-summary"
+          role="region"
+          aria-label="Summary statistics"
+        >
+          <div class="stat-card">
+            <div class="stat-value" id="total-commits">-</div>
+            <div class="stat-label">Total Commits</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="total-repos">-</div>
+            <div class="stat-label">Repositories</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="top-type">-</div>
+            <div class="stat-label">Most Common Type</div>
+          </div>
         </div>
 
-        <div id="error" class="error" style="display: none;" role="alert">
-            <h2>Unable to Load Data</h2>
-            <p>Please try again later or check the repository for updates.</p>
+        <div
+          id="chart-container"
+          role="img"
+          aria-label="Horizontal bar chart showing conventional commit type distribution"
+        ></div>
+
+        <div
+          class="legend"
+          role="group"
+          aria-label="Chart legend - click to toggle visibility"
+        >
+          <!-- Legend items will be generated by JavaScript -->
         </div>
 
-        <main id="main-content" style="display: none;">
-            <div class="stats-summary" role="region" aria-label="Summary statistics">
-                <div class="stat-card">
-                    <div class="stat-value" id="total-commits">-</div>
-                    <div class="stat-label">Total Commits</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="total-repos">-</div>
-                    <div class="stat-label">Repositories</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="top-type">-</div>
-                    <div class="stat-label">Most Common Type</div>
-                </div>
+        <section class="methodology" aria-labelledby="methodology-heading">
+          <h2 id="methodology-heading">Methodology</h2>
+          <div class="methodology-grid">
+            <div class="methodology-item">
+              <h3>Sample Size</h3>
+              <p><span id="method-repos">-</span> repositories analyzed</p>
+              <p><span id="method-commits">-</span> conventional commits</p>
             </div>
-
-            <div
-                id="chart-container"
-                role="img"
-                aria-label="Horizontal bar chart showing conventional commit type distribution"
-            ></div>
-
-            <div class="legend" role="group" aria-label="Chart legend - click to toggle visibility">
-                <!-- Legend items will be generated by JavaScript -->
+            <div class="methodology-item">
+              <h3>Time Window</h3>
+              <p>Last <span id="method-window">-</span> days of commits</p>
+              <p>Up to <span id="method-per-repo">-</span> commits per repo</p>
             </div>
+            <div class="methodology-item">
+              <h3>Filters Applied</h3>
+              <p>Minimum <span id="method-stars">-</span> stars</p>
+            </div>
+            <div class="methodology-item">
+              <h3>Exclusions</h3>
+              <ul id="method-exclusions">
+                <!-- Generated by JavaScript -->
+              </ul>
+            </div>
+          </div>
+          <p
+            style="
+              margin-top: 1.5rem;
+              font-size: 0.875rem;
+              color: var(--text-secondary);
+            "
+          >
+            Last updated: <time id="method-timestamp">-</time>
+          </p>
+        </section>
+      </main>
 
-            <section class="methodology" aria-labelledby="methodology-heading">
-                <h2 id="methodology-heading">Methodology</h2>
-                <div class="methodology-grid">
-                    <div class="methodology-item">
-                        <h3>Sample Size</h3>
-                        <p><span id="method-repos">-</span> repositories analyzed</p>
-                        <p><span id="method-commits">-</span> conventional commits</p>
-                    </div>
-                    <div class="methodology-item">
-                        <h3>Time Window</h3>
-                        <p>Last <span id="method-window">-</span> days of commits</p>
-                        <p>Up to <span id="method-per-repo">-</span> commits per repo</p>
-                    </div>
-                    <div class="methodology-item">
-                        <h3>Filters Applied</h3>
-                        <p>Minimum <span id="method-stars">-</span> stars</p>
-                    </div>
-                    <div class="methodology-item">
-                        <h3>Exclusions</h3>
-                        <ul id="method-exclusions">
-                            <!-- Generated by JavaScript -->
-                        </ul>
-                    </div>
-                </div>
-                <p style="margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-secondary);">
-                    Last updated: <time id="method-timestamp">-</time>
-                </p>
-            </section>
-        </main>
-
-        <footer>
-            <p>
-                Data collected using the
-                <a href="https://github.com/michael-chen-0/github-conventional-commit-stats"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    Conventional Commit Census
-                </a>
-                tool.
-            </p>
-            <p style="margin-top: 0.5rem; font-size: 0.875rem;">
-                Built with Plotly.js • IBM Design Language Colors • WCAG AA Compliant
-            </p>
-        </footer>
+      <footer>
+        <p>
+          Data collected using the
+          <a
+            href="https://github.com/michael-chen-0/github-conventional-commit-stats"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Conventional Commit Census
+          </a>
+          tool.
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.875rem">
+          Built with Plotly.js • IBM Design Language Colors • WCAG AA Compliant
+        </p>
+      </footer>
     </div>
 
     <script>
-        // =========================================================================
-        // CONFIGURATION
-        // =========================================================================
+      // =========================================================================
+      // CONFIGURATION
+      // =========================================================================
 
-        const CONFIG = {
-            dataUrl: 'data.json',
-            storageKey: 'ccc-theme-preference',
-            animationDuration: 250,
-            colors: {
-                light: {
-                    feat: '#0043ce',
-                    fix: '#da1e28',
-                    docs: '#007d79',
-                    chore: '#6f6f6f',
-                    refactor: '#8a3ffc',
-                    test: '#198038',
-                    ci: '#0072c3',
-                    build: '#d02670',
-                    style: '#ba4e00',
-                    perf: '#b28600',
-                    revert: '#4d5358'
-                },
-                dark: {
-                    feat: '#4589ff',
-                    fix: '#fa4d56',
-                    docs: '#08bdba',
-                    chore: '#8d8d8d',
-                    refactor: '#a56eff',
-                    test: '#42be65',
-                    ci: '#33b1ff',
-                    build: '#ee5396',
-                    style: '#ff832b',
-                    perf: '#d2a106',
-                    revert: '#697077'
-                }
+      const CONFIG = {
+        dataUrl: "data.json",
+        storageKey: "ccc-theme-preference",
+        animationDuration: 250,
+        colors: {
+          light: {
+            feat: "#0043ce",
+            fix: "#da1e28",
+            docs: "#007d79",
+            chore: "#6f6f6f",
+            refactor: "#8a3ffc",
+            test: "#198038",
+            ci: "#0072c3",
+            build: "#d02670",
+            style: "#ba4e00",
+            perf: "#b28600",
+            revert: "#4d5358",
+          },
+          dark: {
+            feat: "#4589ff",
+            fix: "#fa4d56",
+            docs: "#08bdba",
+            chore: "#8d8d8d",
+            refactor: "#a56eff",
+            test: "#42be65",
+            ci: "#33b1ff",
+            build: "#ee5396",
+            style: "#ff832b",
+            perf: "#d2a106",
+            revert: "#697077",
+          },
+        },
+        typeOrder: [
+          "feat",
+          "fix",
+          "docs",
+          "chore",
+          "refactor",
+          "test",
+          "ci",
+          "build",
+          "style",
+          "perf",
+          "revert",
+        ],
+      };
+
+      // =========================================================================
+      // STATE
+      // =========================================================================
+
+      let data = null;
+      let chart = null;
+      let visibleTypes = new Set(CONFIG.typeOrder);
+
+      // =========================================================================
+      // THEME MANAGEMENT
+      // =========================================================================
+
+      function getSystemTheme() {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      }
+
+      function getSavedTheme() {
+        return localStorage.getItem(CONFIG.storageKey) || "system";
+      }
+
+      function getEffectiveTheme() {
+        const saved = getSavedTheme();
+        if (saved === "system") {
+          return getSystemTheme();
+        }
+        return saved;
+      }
+
+      function applyTheme(theme) {
+        const effective = theme === "system" ? getSystemTheme() : theme;
+        document.documentElement.setAttribute("data-theme", effective);
+
+        // Update toggle button
+        const icon = document.getElementById("theme-icon");
+        const label = document.getElementById("theme-label");
+
+        if (theme === "system") {
+          icon.textContent = "💻";
+          label.textContent = "System";
+        } else if (theme === "dark") {
+          icon.textContent = "🌙";
+          label.textContent = "Dark";
+        } else {
+          icon.textContent = "☀️";
+          label.textContent = "Light";
+        }
+
+        // Announce to screen readers
+        announce(`Theme changed to ${theme} mode.`);
+
+        // Update chart colors if chart exists
+        if (chart && data) {
+          updateChartColors();
+        }
+      }
+
+      function cycleTheme() {
+        const current = getSavedTheme();
+        let next;
+        if (current === "system") {
+          next = "dark";
+        } else if (current === "dark") {
+          next = "light";
+        } else {
+          next = "system";
+        }
+        localStorage.setItem(CONFIG.storageKey, next);
+        applyTheme(next);
+      }
+
+      // =========================================================================
+      // ACCESSIBILITY
+      // =========================================================================
+
+      function announce(message) {
+        const region = document.getElementById("live-region");
+        region.textContent = message;
+        // Clear after announcement
+        setTimeout(() => {
+          region.textContent = "";
+        }, 1000);
+      }
+
+      // =========================================================================
+      // DATA LOADING
+      // =========================================================================
+
+      async function loadData() {
+        try {
+          const response = await fetch(CONFIG.dataUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          data = await response.json();
+          showContent();
+          renderStats();
+          renderChart();
+          renderLegend();
+          renderMethodology();
+          announce(
+            `Commit type distribution chart loaded. ${formatNumber(data.total_commits)} commits across ${formatNumber(data.total_repos)} repositories.`,
+          );
+        } catch (error) {
+          console.error("Failed to load data:", error);
+          showError();
+          announce("Unable to load data. Please try again later.");
+        }
+      }
+
+      function showContent() {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error").style.display = "none";
+        document.getElementById("main-content").style.display = "block";
+      }
+
+      function showError() {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error").style.display = "block";
+        document.getElementById("main-content").style.display = "none";
+      }
+
+      // =========================================================================
+      // RENDERING
+      // =========================================================================
+
+      function formatNumber(num) {
+        return num.toLocaleString();
+      }
+
+      function renderStats() {
+        document.getElementById("total-commits").textContent = formatNumber(
+          data.total_commits,
+        );
+        document.getElementById("total-repos").textContent = formatNumber(
+          data.total_repos,
+        );
+
+        // Find top type
+        const topType = Object.entries(data.counts).sort(
+          (a, b) => b[1] - a[1],
+        )[0][0];
+        document.getElementById("top-type").textContent = topType;
+      }
+
+      function getChartColors() {
+        const theme = getEffectiveTheme();
+        return CONFIG.colors[theme];
+      }
+
+      function renderChart() {
+        const colors = getChartColors();
+        const sortedTypes = CONFIG.typeOrder
+          .filter((type) => visibleTypes.has(type))
+          .map((type) => ({
+            type,
+            count: data.counts[type] || 0,
+            color: colors[type],
+          }))
+          .sort((a, b) => a.count - b.count); // Ascending for horizontal bar
+
+        const chartData = [
+          {
+            type: "bar",
+            orientation: "h",
+            x: sortedTypes.map((t) => t.count),
+            y: sortedTypes.map((t) => t.type),
+            marker: {
+              color: sortedTypes.map((t) => t.color),
             },
-            typeOrder: ['feat', 'fix', 'docs', 'chore', 'refactor', 'test', 'ci', 'build', 'style', 'perf', 'revert']
+            hovertemplate: sortedTypes.map((t) => {
+              const pct = ((t.count / data.total_commits) * 100).toFixed(1);
+              return `<b>${t.type}</b><br>${formatNumber(t.count)} commits<br>${pct}%<extra></extra>`;
+            }),
+            textposition: "outside",
+            texttemplate: "%{x:,}",
+          },
+        ];
+
+        const bgColor = getComputedStyle(document.documentElement)
+          .getPropertyValue("--bg-secondary")
+          .trim();
+        const textColor = getComputedStyle(document.documentElement)
+          .getPropertyValue("--text-primary")
+          .trim();
+
+        const layout = {
+          paper_bgcolor: bgColor,
+          plot_bgcolor: bgColor,
+          font: {
+            family: "IBM Plex Sans, sans-serif",
+            color: textColor,
+          },
+          margin: { l: 100, r: 80, t: 20, b: 40 },
+          xaxis: {
+            title: "Number of Commits",
+            gridcolor: getComputedStyle(document.documentElement)
+              .getPropertyValue("--border-color")
+              .trim(),
+            tickformat: ",",
+          },
+          yaxis: {
+            title: "",
+            automargin: true,
+          },
+          showlegend: false,
         };
 
-        // =========================================================================
-        // STATE
-        // =========================================================================
+        const config = {
+          responsive: true,
+          displayModeBar: false,
+        };
 
-        let data = null;
-        let chart = null;
-        let visibleTypes = new Set(CONFIG.typeOrder);
-
-        // =========================================================================
-        // THEME MANAGEMENT
-        // =========================================================================
-
-        function getSystemTheme() {
-            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (chart) {
+          Plotly.react("chart-container", chartData, layout, config);
+        } else {
+          chart = Plotly.newPlot("chart-container", chartData, layout, config);
         }
+      }
 
-        function getSavedTheme() {
-            return localStorage.getItem(CONFIG.storageKey) || 'system';
-        }
+      function updateChartColors() {
+        renderChart();
+      }
 
-        function getEffectiveTheme() {
-            const saved = getSavedTheme();
-            if (saved === 'system') {
-                return getSystemTheme();
-            }
-            return saved;
-        }
+      function renderLegend() {
+        const colors = getChartColors();
+        const container = document.querySelector(".legend");
+        container.innerHTML = "";
 
-        function applyTheme(theme) {
-            const effective = theme === 'system' ? getSystemTheme() : theme;
-            document.documentElement.setAttribute('data-theme', effective);
+        CONFIG.typeOrder.forEach((type) => {
+          const count = data.counts[type] || 0;
+          const pct = ((count / data.total_commits) * 100).toFixed(1);
+          const isVisible = visibleTypes.has(type);
 
-            // Update toggle button
-            const icon = document.getElementById('theme-icon');
-            const label = document.getElementById('theme-label');
+          const item = document.createElement("button");
+          item.className = "legend-item";
+          item.setAttribute("role", "switch");
+          item.setAttribute("aria-pressed", isVisible ? "true" : "false");
+          item.setAttribute(
+            "aria-label",
+            `${type}: ${formatNumber(count)} commits, ${pct}%. ${isVisible ? "Visible" : "Hidden"}`,
+          );
+          item.tabIndex = 0;
 
-            if (theme === 'system') {
-                icon.textContent = '💻';
-                label.textContent = 'System';
-            } else if (theme === 'dark') {
-                icon.textContent = '🌙';
-                label.textContent = 'Dark';
-            } else {
-                icon.textContent = '☀️';
-                label.textContent = 'Light';
-            }
-
-            // Announce to screen readers
-            announce(`Theme changed to ${theme} mode.`);
-
-            // Update chart colors if chart exists
-            if (chart && data) {
-                updateChartColors();
-            }
-        }
-
-        function cycleTheme() {
-            const current = getSavedTheme();
-            let next;
-            if (current === 'system') {
-                next = 'dark';
-            } else if (current === 'dark') {
-                next = 'light';
-            } else {
-                next = 'system';
-            }
-            localStorage.setItem(CONFIG.storageKey, next);
-            applyTheme(next);
-        }
-
-        // =========================================================================
-        // ACCESSIBILITY
-        // =========================================================================
-
-        function announce(message) {
-            const region = document.getElementById('live-region');
-            region.textContent = message;
-            // Clear after announcement
-            setTimeout(() => { region.textContent = ''; }, 1000);
-        }
-
-        // =========================================================================
-        // DATA LOADING
-        // =========================================================================
-
-        async function loadData() {
-            try {
-                const response = await fetch(CONFIG.dataUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                data = await response.json();
-                showContent();
-                renderStats();
-                renderChart();
-                renderLegend();
-                renderMethodology();
-                announce(`Commit type distribution chart loaded. ${formatNumber(data.total_commits)} commits across ${formatNumber(data.total_repos)} repositories.`);
-            } catch (error) {
-                console.error('Failed to load data:', error);
-                showError();
-                announce('Unable to load data. Please try again later.');
-            }
-        }
-
-        function showContent() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-        }
-
-        function showError() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('main-content').style.display = 'none';
-        }
-
-        // =========================================================================
-        // RENDERING
-        // =========================================================================
-
-        function formatNumber(num) {
-            return num.toLocaleString();
-        }
-
-        function renderStats() {
-            document.getElementById('total-commits').textContent = formatNumber(data.total_commits);
-            document.getElementById('total-repos').textContent = formatNumber(data.total_repos);
-
-            // Find top type
-            const topType = Object.entries(data.counts)
-                .sort((a, b) => b[1] - a[1])[0][0];
-            document.getElementById('top-type').textContent = topType;
-        }
-
-        function getChartColors() {
-            const theme = getEffectiveTheme();
-            return CONFIG.colors[theme];
-        }
-
-        function renderChart() {
-            const colors = getChartColors();
-            const sortedTypes = CONFIG.typeOrder
-                .filter(type => visibleTypes.has(type))
-                .map(type => ({
-                    type,
-                    count: data.counts[type] || 0,
-                    color: colors[type]
-                }))
-                .sort((a, b) => a.count - b.count); // Ascending for horizontal bar
-
-            const chartData = [{
-                type: 'bar',
-                orientation: 'h',
-                x: sortedTypes.map(t => t.count),
-                y: sortedTypes.map(t => t.type),
-                marker: {
-                    color: sortedTypes.map(t => t.color)
-                },
-                hovertemplate: sortedTypes.map(t => {
-                    const pct = ((t.count / data.total_commits) * 100).toFixed(1);
-                    return `<b>${t.type}</b><br>${formatNumber(t.count)} commits<br>${pct}%<extra></extra>`;
-                }),
-                textposition: 'outside',
-                texttemplate: '%{x:,}',
-            }];
-
-            const bgColor = getComputedStyle(document.documentElement)
-                .getPropertyValue('--bg-secondary').trim();
-            const textColor = getComputedStyle(document.documentElement)
-                .getPropertyValue('--text-primary').trim();
-
-            const layout = {
-                paper_bgcolor: bgColor,
-                plot_bgcolor: bgColor,
-                font: {
-                    family: 'IBM Plex Sans, sans-serif',
-                    color: textColor
-                },
-                margin: { l: 100, r: 80, t: 20, b: 40 },
-                xaxis: {
-                    title: 'Number of Commits',
-                    gridcolor: getComputedStyle(document.documentElement)
-                        .getPropertyValue('--border-color').trim(),
-                    tickformat: ','
-                },
-                yaxis: {
-                    title: '',
-                    automargin: true
-                },
-                showlegend: false
-            };
-
-            const config = {
-                responsive: true,
-                displayModeBar: false
-            };
-
-            if (chart) {
-                Plotly.react('chart-container', chartData, layout, config);
-            } else {
-                chart = Plotly.newPlot('chart-container', chartData, layout, config);
-            }
-        }
-
-        function updateChartColors() {
-            renderChart();
-        }
-
-        function renderLegend() {
-            const colors = getChartColors();
-            const container = document.querySelector('.legend');
-            container.innerHTML = '';
-
-            CONFIG.typeOrder.forEach(type => {
-                const count = data.counts[type] || 0;
-                const pct = ((count / data.total_commits) * 100).toFixed(1);
-                const isVisible = visibleTypes.has(type);
-
-                const item = document.createElement('button');
-                item.className = 'legend-item';
-                item.setAttribute('role', 'switch');
-                item.setAttribute('aria-pressed', isVisible ? 'true' : 'false');
-                item.setAttribute('aria-label', `${type}: ${formatNumber(count)} commits, ${pct}%. ${isVisible ? 'Visible' : 'Hidden'}`);
-                item.tabIndex = 0;
-
-                item.innerHTML = `
+          item.innerHTML = `
                     <span class="legend-color" style="background-color: ${colors[type]}"></span>
                     <span>${type}</span>
                     <span style="color: var(--text-secondary); font-size: 0.75rem;">(${pct}%)</span>
                 `;
 
-                item.addEventListener('click', () => toggleType(type, item));
-                item.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        toggleType(type, item);
-                    }
-                });
-
-                container.appendChild(item);
-            });
-        }
-
-        function toggleType(type, button) {
-            const isVisible = visibleTypes.has(type);
-
-            if (isVisible) {
-                visibleTypes.delete(type);
-                button.setAttribute('aria-pressed', 'false');
-                announce(`${type} commits hidden.`);
-            } else {
-                visibleTypes.add(type);
-                button.setAttribute('aria-pressed', 'true');
-                const count = data.counts[type] || 0;
-                const pct = ((count / data.total_commits) * 100).toFixed(1);
-                announce(`${type} commits shown. ${formatNumber(count)} commits, ${pct}% of total.`);
+          item.addEventListener("click", () => toggleType(type, item));
+          item.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggleType(type, item);
             }
+          });
 
-            renderChart();
+          container.appendChild(item);
+        });
+      }
 
-            // Update aria-label
-            const count = data.counts[type] || 0;
-            const pct = ((count / data.total_commits) * 100).toFixed(1);
-            button.setAttribute('aria-label',
-                `${type}: ${formatNumber(count)} commits, ${pct}%. ${visibleTypes.has(type) ? 'Visible' : 'Hidden'}`
-            );
-        }
+      function toggleType(type, button) {
+        const isVisible = visibleTypes.has(type);
 
-        function renderMethodology() {
-            document.getElementById('method-repos').textContent = formatNumber(data.total_repos);
-            document.getElementById('method-commits').textContent = formatNumber(data.total_commits);
-            document.getElementById('method-window').textContent = data.methodology.time_window_days;
-            document.getElementById('method-per-repo').textContent = data.methodology.max_commits_per_repo;
-            document.getElementById('method-stars').textContent = data.methodology.min_stars;
-
-            const exclusionsList = document.getElementById('method-exclusions');
-            exclusionsList.innerHTML = data.methodology.excluded
-                .map(e => `<li>${e}</li>`)
-                .join('');
-
-            const timestamp = new Date(data.generated_at);
-            document.getElementById('method-timestamp').textContent = timestamp.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZoneName: 'short'
-            });
-        }
-
-        // =========================================================================
-        // INITIALIZATION
-        // =========================================================================
-
-        function init() {
-            // Apply initial theme
-            applyTheme(getSavedTheme());
-
-            // Listen for system theme changes
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-                if (getSavedTheme() === 'system') {
-                    applyTheme('system');
-                }
-            });
-
-            // Theme toggle button
-            document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
-
-            // Load data
-            loadData();
-        }
-
-        // Start when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
+        if (isVisible) {
+          visibleTypes.delete(type);
+          button.setAttribute("aria-pressed", "false");
+          announce(`${type} commits hidden.`);
         } else {
-            init();
+          visibleTypes.add(type);
+          button.setAttribute("aria-pressed", "true");
+          const count = data.counts[type] || 0;
+          const pct = ((count / data.total_commits) * 100).toFixed(1);
+          announce(
+            `${type} commits shown. ${formatNumber(count)} commits, ${pct}% of total.`,
+          );
         }
+
+        renderChart();
+
+        // Update aria-label
+        const count = data.counts[type] || 0;
+        const pct = ((count / data.total_commits) * 100).toFixed(1);
+        button.setAttribute(
+          "aria-label",
+          `${type}: ${formatNumber(count)} commits, ${pct}%. ${visibleTypes.has(type) ? "Visible" : "Hidden"}`,
+        );
+      }
+
+      function renderMethodology() {
+        document.getElementById("method-repos").textContent = formatNumber(
+          data.total_repos,
+        );
+        document.getElementById("method-commits").textContent = formatNumber(
+          data.total_commits,
+        );
+        document.getElementById("method-window").textContent =
+          data.methodology.time_window_days;
+        document.getElementById("method-per-repo").textContent =
+          data.methodology.max_commits_per_repo;
+        document.getElementById("method-stars").textContent =
+          data.methodology.min_stars;
+
+        const exclusionsList = document.getElementById("method-exclusions");
+        exclusionsList.innerHTML = data.methodology.excluded
+          .map((e) => `<li>${e}</li>`)
+          .join("");
+
+        const timestamp = new Date(data.generated_at);
+        document.getElementById("method-timestamp").textContent =
+          timestamp.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZoneName: "short",
+          });
+      }
+
+      // =========================================================================
+      // INITIALIZATION
+      // =========================================================================
+
+      function init() {
+        // Apply initial theme
+        applyTheme(getSavedTheme());
+
+        // Listen for system theme changes
+        window
+          .matchMedia("(prefers-color-scheme: dark)")
+          .addEventListener("change", () => {
+            if (getSavedTheme() === "system") {
+              applyTheme("system");
+            }
+          });
+
+        // Theme toggle button
+        document
+          .getElementById("theme-toggle")
+          .addEventListener("click", cycleTheme);
+
+        // Load data
+        loadData();
+      }
+
+      // Start when DOM is ready
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
     </script>
-</body>
+  </body>
 </html>

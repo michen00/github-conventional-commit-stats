@@ -136,21 +136,21 @@
 
 ### CLI Tests
 
-- [ ] T049 [P] [US2] Write smoke tests for collect command in tests/test_cli_smoke.py
-- [ ] T050 [P] [US2] Write smoke tests for validate command in tests/test_cli_smoke.py
-- [ ] T051 [P] [US2] Write smoke tests for status command in tests/test_cli_smoke.py
-- [ ] T052 [P] [US2] Write smoke tests for prune command in tests/test_cli_smoke.py
+- [x] T049 [P] [US2] Write smoke tests for collect command in tests/test_cli_smoke.py
+- [x] T050 [P] [US2] Write smoke tests for validate command in tests/test_cli_smoke.py
+- [x] T051 [P] [US2] Write smoke tests for status command in tests/test_cli_smoke.py
+- [x] T052 [P] [US2] Write smoke tests for prune command in tests/test_cli_smoke.py
 
 ### CLI Implementation
 
-- [ ] T053 [US2] Create Typer app with global options (--db-path, --help, --version) in src/conv_commit_stats/cli.py
-- [ ] T054 [US2] Implement Settings class with pydantic-settings for GITHUB_TOKEN, CCC_* env vars in src/conv_commit_stats/cli.py
-- [ ] T055 [US2] Implement collect command with --max-repos, --min-stars, --resume options in src/conv_commit_stats/cli.py
-- [ ] T056 [US2] Implement concurrency check (no parallel runs) in collect command in src/conv_commit_stats/cli.py
-- [ ] T057 [US2] Implement validate command with integrity checks per cli.md in src/conv_commit_stats/cli.py
-- [ ] T058 [US2] Implement status command showing current/recent runs in src/conv_commit_stats/cli.py
-- [ ] T059 [US2] Implement prune command with --keep, --dry-run options in src/conv_commit_stats/cli.py
-- [ ] T060 [US2] Update src/conv_commit_stats/__main__.py to import and run cli.app
+- [x] T053 [US2] Create Typer app with global options (--db-path, --help, --version) in src/conv_commit_stats/cli.py
+- [x] T054 [US2] Implement Settings class with pydantic-settings for GITHUB_TOKEN, CCC_* env vars in src/conv_commit_stats/cli.py
+- [x] T055 [US2] Implement collect command with --max-repos, --min-stars, --resume options in src/conv_commit_stats/cli.py
+- [x] T056 [US2] Implement concurrency check (no parallel runs) in collect command in src/conv_commit_stats/cli.py
+- [x] T057 [US2] Implement validate command with integrity checks per cli.md in src/conv_commit_stats/cli.py
+- [x] T058 [US2] Implement status command showing current/recent runs in src/conv_commit_stats/cli.py
+- [x] T059 [US2] Implement prune command with --keep, --dry-run options in src/conv_commit_stats/cli.py
+- [x] T060 [US2] Update src/conv_commit_stats/**main**.py to import and run cli.app
 
 **Checkpoint**: US2 complete - run `uv run conv-commit-stats collect --max-repos 10` to verify collection works
 
@@ -164,15 +164,15 @@
 
 ### Export Tests
 
-- [ ] T061 [P] [US3] Write tests for data aggregation with Polars in tests/test_cli_smoke.py
-- [ ] T062 [P] [US3] Write tests for ExportData JSON schema validation in tests/test_cli_smoke.py
+- [x] T061 [P] [US3] Write tests for data aggregation with Polars in tests/test_cli_smoke.py
+- [x] T062 [P] [US3] Write tests for ExportData JSON schema validation in tests/test_cli_smoke.py
 
 ### Export Implementation
 
-- [ ] T063 [US3] Implement ExportData, CommitTypeCounts, Methodology Pydantic models in src/conv_commit_stats/storage.py
-- [ ] T064 [US3] Implement aggregate_run_data() using Polars in src/conv_commit_stats/cli.py
-- [ ] T065 [US3] Implement export command with --run, --output options in src/conv_commit_stats/cli.py
-- [ ] T066 [US3] Implement Pandera schema validation before export in src/conv_commit_stats/cli.py
+- [x] T063 [US3] Implement ExportData, CommitTypeCounts, Methodology Pydantic models in src/conv_commit_stats/storage.py
+- [x] T064 [US3] Implement aggregate_run_data() using Polars in src/conv_commit_stats/cli.py
+- [x] T065 [US3] Implement export command with --run, --output options in src/conv_commit_stats/cli.py
+- [x] T066 [US3] Implement Pandera schema validation before export in src/conv_commit_stats/cli.py
 
 **Checkpoint**: US3 complete - run full pipeline: collect → export → verify docs/data.json → refresh visualization
 
@@ -186,13 +186,13 @@
 
 ### CI/CD Implementation
 
-- [ ] T067 [US5] Create .github/workflows/collect.yml with monthly cron schedule (0 4 1 * *)
-- [ ] T068 [US5] Add workflow_dispatch trigger for manual runs in .github/workflows/collect.yml
-- [ ] T069 [US5] Implement collection step with 6-hour timeout in .github/workflows/collect.yml
-- [ ] T070 [US5] Implement export and validate steps in .github/workflows/collect.yml
-- [ ] T071 [US5] Implement git commit with conventional message: "chore(data): update conventional commit statistics"
-- [ ] T072 [US5] Implement auto-revert on validation failure in .github/workflows/collect.yml
-- [ ] T073 [US5] Configure GitHub Pages deployment in .github/workflows/collect.yml
+- [x] T067 [US5] Create .github/workflows/collect.yml with monthly cron schedule (0 4 1 **)
+- [x] T068 [US5] Add workflow_dispatch trigger for manual runs in .github/workflows/collect.yml
+- [x] T069 [US5] Implement collection step with 6-hour timeout in .github/workflows/collect.yml
+- [x] T070 [US5] Implement export and validate steps in .github/workflows/collect.yml
+- [x] T071 [US5] Implement git commit with conventional message: "chore(data): update conventional commit statistics"
+- [x] T072 [US5] Implement auto-revert on validation failure in .github/workflows/collect.yml
+- [x] T073 [US5] Configure GitHub Pages deployment in .github/workflows/collect.yml
 
 **Checkpoint**: US5 complete - trigger workflow manually to verify full pipeline
 
@@ -202,13 +202,13 @@
 
 **Purpose**: Documentation, cleanup, and final validation
 
-- [ ] T074 [P] Update src/conv_commit_stats/__init__.py with public API exports
-- [ ] T075 [P] Add py.typed marker file for PEP 561 compliance
-- [ ] T076 [P] Verify ≥80% test coverage with `make test`
-- [ ] T077 Run quickstart.md validation: full workflow from clone to visualization
-- [ ] T078 [P] Update README.md with usage instructions and badges
-- [ ] T079 Run `make check` to verify all linting, formatting, and tests pass
-- [ ] T080 Final accessibility audit of docs/index.html with browser tools
+- [x] T074 [P] Update src/conv_commit_stats/__init__.py with public API exports
+- [x] T075 [P] Add py.typed marker file for PEP 561 compliance
+- [x] T076 [P] Verify ≥80% test coverage with `make test`
+- [x] T077 Run quickstart.md validation: full workflow from clone to visualization
+- [x] T078 [P] Update README.md with usage instructions and badges
+- [x] T079 Run `make check` to verify all linting, formatting, and tests pass
+- [x] T080 Final accessibility audit of docs/index.html with browser tools
 
 ---
 
@@ -256,7 +256,7 @@ Phase 3 (US1)             Phase 4 (US2)             [Can parallelize]
 
 ## Parallel Opportunities
 
-### Phase 2 - All foundational modules in parallel:
+### Phase 2 - All foundational modules in parallel
 
 ```text
 T007-T011 (parsing)     ─┐
@@ -264,7 +264,7 @@ T012-T016 (storage)     ─┼─► All independent, can parallelize
 T017-T022 (github_client)┘
 ```
 
-### Phase 3 - Independent UI components (all [P] after T023):
+### Phase 3 - Independent UI components (all [P] after T023)
 
 ```text
 T024-T031 (chart + methodology) ─┐
@@ -272,7 +272,7 @@ T032-T036 (accessibility)        ─┼─► All [P] marked, parallelize after 
 T037-T038 (error handling)       ┘
 ```
 
-### Phase 4 - Tests before implementation:
+### Phase 4 - Tests before implementation
 
 ```text
 T039-T042 (collector tests) ──► Then T043-T048 (collector impl)

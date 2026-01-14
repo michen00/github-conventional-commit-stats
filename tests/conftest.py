@@ -26,7 +26,7 @@ def tmp_db_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def storage(tmp_path: Path) -> Generator["Storage", None, None]:  # noqa: F821
+def storage(tmp_path: Path) -> Generator['Storage', None, None]:  # noqa: F821
     """Provide a Storage instance that auto-closes after test.
 
     Usage:
@@ -47,51 +47,51 @@ def sample_commit_messages() -> dict[str, list[str]]:
     Returns a dict mapping commit types to lists of valid messages.
     """
     return {
-        "feat": [
-            "feat: add user authentication",
-            "feat(auth): implement OAuth2 login",
-            "feat!: breaking change to API",
-            "feat(api)!: remove deprecated endpoints",
+        'feat': [
+            'feat: add user authentication',
+            'feat(auth): implement OAuth2 login',
+            'feat!: breaking change to API',
+            'feat(api)!: remove deprecated endpoints',
         ],
-        "fix": [
-            "fix: resolve memory leak in parser",
-            "fix(ui): correct button alignment",
-            "fix!: breaking fix for security issue",
+        'fix': [
+            'fix: resolve memory leak in parser',
+            'fix(ui): correct button alignment',
+            'fix!: breaking fix for security issue',
         ],
-        "docs": [
-            "docs: update README",
-            "docs(api): add endpoint documentation",
+        'docs': [
+            'docs: update README',
+            'docs(api): add endpoint documentation',
         ],
-        "style": [
-            "style: format code with black",
-            "style(tests): fix linting errors",
+        'style': [
+            'style: format code with black',
+            'style(tests): fix linting errors',
         ],
-        "refactor": [
-            "refactor: simplify authentication logic",
-            "refactor(db): optimize query performance",
+        'refactor': [
+            'refactor: simplify authentication logic',
+            'refactor(db): optimize query performance',
         ],
-        "perf": [
-            "perf: improve startup time",
-            "perf(search): add caching layer",
+        'perf': [
+            'perf: improve startup time',
+            'perf(search): add caching layer',
         ],
-        "test": [
-            "test: add unit tests for parser",
-            "test(integration): add e2e tests",
+        'test': [
+            'test: add unit tests for parser',
+            'test(integration): add e2e tests',
         ],
-        "build": [
-            "build: update dependencies",
-            "build(docker): optimize image size",
+        'build': [
+            'build: update dependencies',
+            'build(docker): optimize image size',
         ],
-        "ci": [
-            "ci: add GitHub Actions workflow",
-            "ci(release): automate version bumping",
+        'ci': [
+            'ci: add GitHub Actions workflow',
+            'ci(release): automate version bumping',
         ],
-        "chore": [
-            "chore: clean up unused files",
-            "chore(deps): bump version of httpx",
+        'chore': [
+            'chore: clean up unused files',
+            'chore(deps): bump version of httpx',
         ],
-        "revert": [
-            "revert: revert previous commit",
+        'revert': [
+            'revert: revert previous commit',
             'revert: revert "feat: add feature"',
         ],
     }
@@ -101,20 +101,20 @@ def sample_commit_messages() -> dict[str, list[str]]:
 def invalid_commit_messages() -> list[str]:
     """Provide commit messages that are NOT conventional commits."""
     return [
-        "Update README",
-        "Fix bug",
-        "WIP",
+        'Update README',
+        'Fix bug',
+        'WIP',
         "Merge branch 'main' into feature",
-        "initial commit",
-        "v1.0.0",
-        "",
-        "   ",
-        "FEAT: uppercase type",
-        "feat:missing space",
-        "Feat: capitalized type",
-        "feature: wrong type name",
-        "feat - wrong separator",
-        "feat() empty scope",
+        'initial commit',
+        'v1.0.0',
+        '',
+        '   ',
+        'FEAT: uppercase type',
+        'feat:missing space',
+        'Feat: capitalized type',
+        'feature: wrong type name',
+        'feat - wrong separator',
+        'feat() empty scope',
     ]
 
 
@@ -122,23 +122,23 @@ def invalid_commit_messages() -> list[str]:
 def bot_authors() -> list[str]:
     """Provide author names that should be detected as bots."""
     return [
-        "dependabot[bot]",
-        "renovate[bot]",
-        "github-actions[bot]",
-        "pre-commit-ci[bot]",
-        "semantic-release-bot",
-        "snyk-bot",
-        "greenkeeper[bot]",
-        "imgbot[bot]",
-        "allcontributors[bot]",
-        "mergify[bot]",
-        "codecov[bot]",
-        "depfu[bot]",
-        "whitesource-bolt-for-github[bot]",
-        "mend-bolt-for-github[bot]",
-        "restyled-io[bot]",
-        "github-learning-lab[bot]",
-        "release-please[bot]",
+        'dependabot[bot]',
+        'renovate[bot]',
+        'github-actions[bot]',
+        'pre-commit-ci[bot]',
+        'semantic-release-bot',
+        'snyk-bot',
+        'greenkeeper[bot]',
+        'imgbot[bot]',
+        'allcontributors[bot]',
+        'mergify[bot]',
+        'codecov[bot]',
+        'depfu[bot]',
+        'whitesource-bolt-for-github[bot]',
+        'mend-bolt-for-github[bot]',
+        'restyled-io[bot]',
+        'github-learning-lab[bot]',
+        'release-please[bot]',
     ]
 
 
@@ -146,11 +146,11 @@ def bot_authors() -> list[str]:
 def human_authors() -> list[str]:
     """Provide author names that should NOT be detected as bots."""
     return [
-        "john-doe",
-        "jane_smith",
-        "developer123",
-        "the-real-bot-master",  # Contains "bot" but is a human
-        "robotics-enthusiast",  # Contains "bot" but is a human
+        'john-doe',
+        'jane_smith',
+        'developer123',
+        'the-real-bot-master',  # Contains "bot" but is a human
+        'robotics-enthusiast',  # Contains "bot" but is a human
     ]
 
 
@@ -158,21 +158,21 @@ def human_authors() -> list[str]:
 def sample_github_repo() -> dict[str, Any]:
     """Provide a sample GitHub repository API response."""
     return {
-        "id": 10270250,
-        "name": "react",
-        "full_name": "facebook/react",
-        "owner": {"login": "facebook"},
-        "html_url": "https://github.com/facebook/react",
-        "description": "The library for web and native user interfaces",
-        "fork": False,
-        "created_at": "2013-05-24T16:15:54Z",
-        "updated_at": "2026-01-12T12:00:00Z",
-        "pushed_at": "2026-01-12T10:30:00Z",
-        "stargazers_count": 220000,
-        "language": "JavaScript",
-        "default_branch": "main",
-        "archived": False,
-        "license": {"spdx_id": "MIT"},
+        'id': 10270250,
+        'name': 'react',
+        'full_name': 'facebook/react',
+        'owner': {'login': 'facebook'},
+        'html_url': 'https://github.com/facebook/react',
+        'description': 'The library for web and native user interfaces',
+        'fork': False,
+        'created_at': '2013-05-24T16:15:54Z',
+        'updated_at': '2026-01-12T12:00:00Z',
+        'pushed_at': '2026-01-12T10:30:00Z',
+        'stargazers_count': 220000,
+        'language': 'JavaScript',
+        'default_branch': 'main',
+        'archived': False,
+        'license': {'spdx_id': 'MIT'},
     }
 
 
@@ -180,21 +180,21 @@ def sample_github_repo() -> dict[str, Any]:
 def sample_github_commit() -> dict[str, Any]:
     """Provide a sample GitHub commit API response."""
     return {
-        "sha": "abc123def456789",
-        "commit": {
-            "author": {
-                "name": "John Doe",
-                "email": "john@example.com",
-                "date": "2026-01-12T10:30:00Z",
+        'sha': 'abc123def456789',
+        'commit': {
+            'author': {
+                'name': 'John Doe',
+                'email': 'john@example.com',
+                'date': '2026-01-12T10:30:00Z',
             },
-            "committer": {
-                "name": "John Doe",
-                "email": "john@example.com",
-                "date": "2026-01-12T10:30:00Z",
+            'committer': {
+                'name': 'John Doe',
+                'email': 'john@example.com',
+                'date': '2026-01-12T10:30:00Z',
             },
-            "message": "feat(api): add new endpoint for user data",
+            'message': 'feat(api): add new endpoint for user data',
         },
-        "author": {"login": "johndoe"},
-        "committer": {"login": "johndoe"},
-        "parents": [{"sha": "parent123"}],
+        'author': {'login': 'johndoe'},
+        'committer': {'login': 'johndoe'},
+        'parents': [{'sha': 'parent123'}],
     }

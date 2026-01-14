@@ -209,6 +209,7 @@ BOT_PATTERNS = [
 **localStorage Key**: `ccc-theme-preference`
 
 **Values**:
+
 - `"system"` - Follow system preference (default)
 - `"dark"` - Force dark theme
 - `"light"` - Force light theme

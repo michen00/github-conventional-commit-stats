@@ -19,12 +19,12 @@ import re
 from enum import StrEnum, auto
 
 __all__ = (
-    "CommitType",
-    "is_conventional_commit",
-    "parse_commit_type",
-    "is_bot",
-    "CONVENTIONAL_COMMIT_PATTERN",
-    "BOT_PATTERNS",
+    'BOT_PATTERNS',
+    'CONVENTIONAL_COMMIT_PATTERN',
+    'CommitType',
+    'is_bot',
+    'is_conventional_commit',
+    'parse_commit_type',
 )
 
 
@@ -50,44 +50,44 @@ class CommitType(StrEnum):
 # - Breaking change indicator (!) is optional
 # - Colon followed by space and description is required
 CONVENTIONAL_COMMIT_PATTERN = re.compile(
-    r"^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
-    r"(\([^)]+\))?"  # Optional scope (non-empty)
-    r"!?"  # Optional breaking change indicator
-    r": "  # Colon followed by space
-    r".+"  # Description (at least one character)
-    r"$",
+    r'^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)'
+    r'(\([^)]+\))?'  # Optional scope (non-empty)
+    r'!?'  # Optional breaking change indicator
+    r': '  # Colon followed by space
+    r'.+'  # Description (at least one character)
+    r'$',
     re.MULTILINE,
 )
 
 # Type extraction pattern (just captures the type)
 TYPE_EXTRACTION_PATTERN = re.compile(
-    r"^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
-    r"(?:\([^)]+\))?"
-    r"!?"
-    r": ",
+    r'^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)'
+    r'(?:\([^)]+\))?'
+    r'!?'
+    r': ',
 )
 
 # Bot detection patterns (case-insensitive)
 # These patterns match known bot usernames and service accounts
 BOT_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\[bot\]", re.IGNORECASE),  # Contains [bot] anywhere
-    re.compile(r"^dependabot", re.IGNORECASE),  # dependabot
-    re.compile(r"^renovate", re.IGNORECASE),  # renovate
-    re.compile(r"^github-actions", re.IGNORECASE),  # github-actions
-    re.compile(r"^pre-commit-ci", re.IGNORECASE),  # pre-commit-ci
-    re.compile(r"^semantic-release", re.IGNORECASE),  # semantic-release
-    re.compile(r"^snyk-", re.IGNORECASE),  # snyk-bot
-    re.compile(r"^greenkeeper", re.IGNORECASE),  # greenkeeper
-    re.compile(r"^imgbot", re.IGNORECASE),  # imgbot
-    re.compile(r"^allcontributors", re.IGNORECASE),  # allcontributors
-    re.compile(r"^mergify", re.IGNORECASE),  # mergify
-    re.compile(r"^codecov", re.IGNORECASE),  # codecov
-    re.compile(r"^depfu", re.IGNORECASE),  # depfu
-    re.compile(r"^whitesource-bolt", re.IGNORECASE),  # whitesource
-    re.compile(r"^mend-bolt", re.IGNORECASE),  # mend (formerly whitesource)
-    re.compile(r"^restyled-io", re.IGNORECASE),  # restyled
-    re.compile(r"^github-learning-lab", re.IGNORECASE),  # learning lab
-    re.compile(r"^release-please", re.IGNORECASE),  # release-please
+    re.compile(r'\[bot\]', re.IGNORECASE),  # Contains [bot] anywhere
+    re.compile(r'^dependabot', re.IGNORECASE),  # dependabot
+    re.compile(r'^renovate', re.IGNORECASE),  # renovate
+    re.compile(r'^github-actions', re.IGNORECASE),  # github-actions
+    re.compile(r'^pre-commit-ci', re.IGNORECASE),  # pre-commit-ci
+    re.compile(r'^semantic-release', re.IGNORECASE),  # semantic-release
+    re.compile(r'^snyk-', re.IGNORECASE),  # snyk-bot
+    re.compile(r'^greenkeeper', re.IGNORECASE),  # greenkeeper
+    re.compile(r'^imgbot', re.IGNORECASE),  # imgbot
+    re.compile(r'^allcontributors', re.IGNORECASE),  # allcontributors
+    re.compile(r'^mergify', re.IGNORECASE),  # mergify
+    re.compile(r'^codecov', re.IGNORECASE),  # codecov
+    re.compile(r'^depfu', re.IGNORECASE),  # depfu
+    re.compile(r'^whitesource-bolt', re.IGNORECASE),  # whitesource
+    re.compile(r'^mend-bolt', re.IGNORECASE),  # mend (formerly whitesource)
+    re.compile(r'^restyled-io', re.IGNORECASE),  # restyled
+    re.compile(r'^github-learning-lab', re.IGNORECASE),  # learning lab
+    re.compile(r'^release-please', re.IGNORECASE),  # release-please
 )
 
 
@@ -108,7 +108,7 @@ def is_conventional_commit(message: str) -> bool:
         return False
 
     # Only check the first line for multiline messages
-    first_line = message.split("\n")[0]
+    first_line = message.split('\n')[0]
 
     return CONVENTIONAL_COMMIT_PATTERN.match(first_line) is not None
 
@@ -125,7 +125,7 @@ def parse_commit_type(message: str) -> CommitType | None:
         return None
 
     # Only check the first line for multiline messages
-    first_line = message.split("\n")[0]
+    first_line = message.split('\n')[0]
 
     match = TYPE_EXTRACTION_PATTERN.match(first_line)
     if match is None:

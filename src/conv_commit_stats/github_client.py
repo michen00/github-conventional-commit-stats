@@ -12,16 +12,15 @@ The client respects GitHub API rate limits:
 """
 
 import random
-import time
 from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 
 __all__ = (
-    "GitHubClient",
-    "RateLimitExceeded",
-    "calculate_backoff_with_jitter",
+    'GitHubClient',
+    'RateLimitExceeded',
+    'calculate_backoff_with_jitter',
 )
 
 
@@ -77,7 +76,7 @@ class GitHubClient:
             repos = client.search_repositories(query="...")
     """
 
-    BASE_URL = "https://api.github.com"
+    BASE_URL = 'https://api.github.com'
 
     def __init__(
         self,
@@ -104,14 +103,14 @@ class GitHubClient:
         self._client = httpx.Client(
             base_url=self.BASE_URL,
             headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {token}",
-                "X-GitHub-Api-Version": "2022-11-28",
+                'Accept': 'application/vnd.github+json',
+                'Authorization': f'Bearer {token}',
+                'X-GitHub-Api-Version': '2022-11-28',
             },
             timeout=timeout,
         )
 
-    def __enter__(self) -> "GitHubClient":
+    def __enter__(self) -> 'GitHubClient':
         """Enter context manager."""
         return self
 
@@ -130,25 +129,23 @@ class GitHubClient:
 
     def _update_rate_limits(self, response: httpx.Response) -> None:
         """Update rate limit tracking from response headers."""
-        remaining = response.headers.get("X-RateLimit-Remaining")
-        reset_time = response.headers.get("X-RateLimit-Reset")
+        remaining = response.headers.get('X-RateLimit-Remaining')
+        reset_time = response.headers.get('X-RateLimit-Reset')
 
         if remaining is not None:
             self.rate_limit_remaining = int(remaining)
 
         if reset_time is not None:
-            self.rate_limit_reset_at = datetime.fromtimestamp(
-                int(reset_time), tz=UTC
-            )
+            self.rate_limit_reset_at = datetime.fromtimestamp(int(reset_time), tz=UTC)
 
     def _check_rate_limit_response(self, response: httpx.Response) -> None:
         """Check for rate limit errors in response."""
         if response.status_code == 403:
             try:
                 data = response.json()
-                if "rate limit" in data.get("message", "").lower():
+                if 'rate limit' in data.get('message', '').lower():
                     raise RateLimitExceeded(
-                        message=data.get("message", "Rate limit exceeded"),
+                        message=data.get('message', 'Rate limit exceeded'),
                         reset_at=self.rate_limit_reset_at,
                         remaining=self.rate_limit_remaining or 0,
                     )
@@ -203,19 +200,19 @@ class GitHubClient:
             RateLimitExceeded: If search rate limit is exceeded
         """
         response = self._request(
-            "GET",
-            "/search/repositories",
+            'GET',
+            '/search/repositories',
             params={
-                "q": query,
-                "per_page": per_page,
-                "page": page,
-                "sort": "stars",
-                "order": "desc",
+                'q': query,
+                'per_page': per_page,
+                'page': page,
+                'sort': 'stars',
+                'order': 'desc',
             },
         )
 
         data = response.json()
-        return data.get("items", [])
+        return data.get('items', [])
 
     def get_repository(self, repo: str) -> dict[str, Any]:
         """Get repository metadata.
@@ -229,7 +226,7 @@ class GitHubClient:
         Raises:
             httpx.HTTPStatusError: If repository not found
         """
-        response = self._request("GET", f"/repos/{repo}")
+        response = self._request('GET', f'/repos/{repo}')
         return response.json()
 
     def get_commits(
@@ -250,15 +247,15 @@ class GitHubClient:
         Returns:
             List of commit objects from the API
         """
-        params: dict[str, Any] = {"per_page": per_page}
+        params: dict[str, Any] = {'per_page': per_page}
 
         if sha:
-            params["sha"] = sha
+            params['sha'] = sha
 
         if since:
-            params["since"] = since.isoformat()
+            params['since'] = since.isoformat()
 
-        response = self._request("GET", f"/repos/{repo}/commits", params=params)
+        response = self._request('GET', f'/repos/{repo}/commits', params=params)
         return response.json()
 
     def should_sleep_for_rate_limit(self) -> bool:

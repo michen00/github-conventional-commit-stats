@@ -15,7 +15,12 @@ from typing import Any
 import structlog
 
 from conv_commit_stats.github_client import GitHubClient, RateLimitExceeded
-from conv_commit_stats.parsing import CommitType, is_bot, is_conventional_commit, parse_commit_type
+from conv_commit_stats.parsing import (
+    CommitType,
+    is_bot,
+    is_conventional_commit,
+    parse_commit_type,
+)
 from conv_commit_stats.storage import (
     RepoRecord,
     Run,
@@ -26,7 +31,7 @@ from conv_commit_stats.storage import (
 
 logger = structlog.get_logger(__name__)
 
-__all__ = ("Collector",)
+__all__ = ('Collector',)
 
 
 class Collector:
@@ -38,12 +43,12 @@ class Collector:
 
     # Star ranges for search pagination (bypasses 1000-result limit)
     STAR_RANGES = [
-        "stars:10000..*",
-        "stars:5000..10000",
-        "stars:1000..5000",
-        "stars:500..1000",
-        "stars:100..500",
-        "stars:3..100",
+        'stars:10000..*',
+        'stars:5000..10000',
+        'stars:1000..5000',
+        'stars:500..1000',
+        'stars:100..500',
+        'stars:3..100',
     ]
 
     def __init__(
@@ -90,7 +95,7 @@ class Collector:
         Sets interruption flag so the collector can finish current repo
         and save progress before exiting.
         """
-        logger.info("Received signal", signal=signum)
+        logger.info('Received signal', signal=signum)
         self._interrupted = True
 
     def start_collection(self) -> str:
@@ -105,13 +110,14 @@ class Collector:
         # Check for concurrent runs
         running_run = self._storage.get_running_run()
         if running_run is not None:
-            raise RuntimeError(
-                f"Another collection is in progress ({running_run.run_id}). "
-                "Use --resume to continue or wait for it to complete."
+            msg = (
+                f'Another collection is in progress ({running_run.run_id}). '
+                'Use --resume to continue or wait for it to complete.'
             )
+            raise RuntimeError(msg)
 
         # Create new run
-        run_id = f"run_{datetime.now(UTC).strftime('%Y-%m-%dT%H:%M:%SZ')}"
+        run_id = f'run_{datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}'
         run = Run(
             run_id=run_id,
             started_at=datetime.now(UTC),
@@ -120,7 +126,7 @@ class Collector:
         self._storage.save_run(run)
         self._current_run_id = run_id
 
-        logger.info("Started collection run", run_id=run_id)
+        logger.info('Started collection run', run_id=run_id)
         return run_id
 
     def resume_collection(self, run_id: str) -> None:
@@ -134,13 +140,15 @@ class Collector:
         """
         run = self._storage.get_run(run_id)
         if run is None:
-            raise ValueError(f"Run not found: {run_id}")
+            msg = f'Run not found: {run_id}'
+            raise ValueError(msg)
 
         if run.status != RunStatus.RUNNING:
-            raise ValueError(f"Run {run_id} is not resumable (status: {run.status})")
+            msg = f'Run {run_id} is not resumable (status: {run.status})'
+            raise ValueError(msg)
 
         self._current_run_id = run_id
-        logger.info("Resuming collection run", run_id=run_id)
+        logger.info('Resuming collection run', run_id=run_id)
 
     def discover_repositories(self) -> list[dict[str, Any]]:
         """Discover repositories using GitHub Search API.
@@ -157,12 +165,12 @@ class Collector:
         processed_repos: set[str] = set()
 
         # Get last processed repo for resume
-        last_repo = self._storage.get_progress("last_repo")
+        last_repo = self._storage.get_progress('last_repo')
         if isinstance(last_repo, str):
             processed_repos.add(last_repo)
 
         # Get search cursor for resume
-        search_cursor_value = self._storage.get_progress("search_cursor")
+        search_cursor_value = self._storage.get_progress('search_cursor')
         start_range_idx = 0
         start_page = 1
 
@@ -184,7 +192,9 @@ class Collector:
                         break
 
         # Iterate through star ranges
-        for range_idx, star_range in enumerate(self.STAR_RANGES[start_range_idx:], start=start_range_idx):
+        for range_idx, star_range in enumerate(
+            self.STAR_RANGES[start_range_idx:], start=start_range_idx
+        ):
             if len(repos) >= self.max_repos:
                 break
 
@@ -195,13 +205,13 @@ class Collector:
             # Search with filters
             query_parts = [
                 star_range,
-                f"pushed:>{self._get_time_window_start().isoformat()}",
-                "is:public",
-                "is:not-archived",
-                "is:not-fork",
-                "license:>0",  # Has license
+                f'pushed:>{self._get_time_window_start().isoformat()}',
+                'is:public',
+                'is:not-archived',
+                'is:not-fork',
+                'license:>0',  # Has license
             ]
-            query = " ".join(query_parts)
+            query = ' '.join(query_parts)
 
             # Paginate through results
             # GitHub Search API limit: 1000 results = ~34 pages (30 per page)
@@ -222,11 +232,11 @@ class Collector:
 
                     repos_before_page = len(repos)
                     for repo in results:
-                        repo_name = repo["full_name"]
+                        repo_name = repo['full_name']
                         if repo_name in processed_repos:
                             continue  # Skip already processed
 
-                        if repo["stargazers_count"] < self.min_stars:
+                        if repo['stargazers_count'] < self.min_stars:
                             continue  # Filter by min stars
 
                         repos.append(repo)
@@ -241,7 +251,7 @@ class Collector:
 
                     # Save search cursor
                     self._storage.save_progress(
-                        "search_cursor",
+                        'search_cursor',
                         SearchCursor(stars_range=star_range, page=page),
                     )
 
@@ -249,11 +259,13 @@ class Collector:
 
                     # Check for interruption
                     if self._interrupted:
-                        logger.info("Collection interrupted during discovery")
+                        logger.info('Collection interrupted during discovery')
                         return repos
 
                 except RateLimitExceeded as e:
-                    logger.error("Rate limit exceeded during discovery", error=str(e))
+                    logger.exception(
+                        'Rate limit exceeded during discovery', error=str(e)
+                    )
                     raise
 
         return repos
@@ -276,15 +288,15 @@ class Collector:
         Returns:
             RepoRecord if processing succeeded, None if skipped/failed
         """
-        repo_name = repo_data["full_name"]
-        logger.info("Processing repository", repo=repo_name)
+        repo_name = repo_data['full_name']
+        logger.info('Processing repository', repo=repo_name)
 
         try:
             # Fetch commits
             since = self._get_time_window_start()
             commits = self._github_client.get_commits(
                 repo=repo_name,
-                sha=repo_data.get("default_branch", "main"),
+                sha=repo_data.get('default_branch', 'main'),
                 since=since,
                 per_page=self.max_commits_per_repo,
             )
@@ -295,16 +307,16 @@ class Collector:
 
             for commit in commits[: self.max_commits_per_repo]:
                 # Skip merge commits (2+ parents)
-                if len(commit.get("parents", [])) >= 2:
+                if len(commit.get('parents', [])) >= 2:
                     continue
 
                 # Skip bot commits
-                author_login = commit.get("author", {}).get("login", "")
+                author_login = commit.get('author', {}).get('login', '')
                 if author_login and is_bot(author_login):
                     continue
 
                 # Parse commit message
-                message = commit["commit"]["message"]
+                message = commit['commit']['message']
                 if not is_conventional_commit(message):
                     continue
 
@@ -315,32 +327,30 @@ class Collector:
 
             # Get head commit SHA (ensure it's at least 7 characters for validation)
             if commits:
-                head_sha = commits[0]["sha"][:40]
+                head_sha = commits[0]['sha'][:40]
                 # Pad short SHAs to meet minimum length requirement
                 if len(head_sha) < 7:
-                    head_sha = head_sha.ljust(7, "0")
+                    head_sha = head_sha.ljust(7, '0')
             else:
-                head_sha = "0000000"  # Placeholder for repos with no commits
+                head_sha = '0000000'  # Placeholder for repos with no commits
 
             # Create repo record
             record = RepoRecord(
                 run_id=run_id,
                 repo=repo_name,
-                default_branch=repo_data.get("default_branch", "main"),
+                default_branch=repo_data.get('default_branch', 'main'),
                 head_commit=head_sha,
-                stars=repo_data["stargazers_count"],
-                language=repo_data.get("language"),
-                created_at=datetime.fromisoformat(
-                    repo_data["created_at"].replace("Z", "+00:00")
-                ),
-                license=repo_data.get("license", {}).get("spdx_id"),
+                stars=repo_data['stargazers_count'],
+                language=repo_data.get('language'),
+                created_at=datetime.fromisoformat(repo_data['created_at']),
+                license=repo_data.get('license', {}).get('spdx_id'),
                 timestamp=datetime.now(UTC),
                 commits_analyzed=commits_analyzed,
                 **type_counts,
             )
 
             logger.info(
-                "Repository processed",
+                'Repository processed',
                 repo=repo_name,
                 commits=commits_analyzed,
             )
@@ -349,7 +359,7 @@ class Collector:
 
         except Exception as e:
             logger.warning(
-                "Failed to process repository",
+                'Failed to process repository',
                 repo=repo_name,
                 error=str(e),
             )
@@ -372,7 +382,8 @@ class Collector:
         if resume:
             latest_run = self._storage.get_running_run()
             if latest_run is None:
-                raise ValueError("No running run found to resume")
+                msg = 'No running run found to resume'
+                raise ValueError(msg)
             self.resume_collection(latest_run.run_id)
             run_id = latest_run.run_id
         else:
@@ -381,7 +392,7 @@ class Collector:
         try:
             # Discover repositories
             repos = self.discover_repositories()
-            logger.info("Discovered repositories", count=len(repos))
+            logger.info('Discovered repositories', count=len(repos))
 
             # Process each repository
             repos_processed = 0
@@ -390,7 +401,7 @@ class Collector:
 
             for repo_data in repos:
                 if self._interrupted:
-                    logger.info("Collection interrupted, saving progress")
+                    logger.info('Collection interrupted, saving progress')
                     break
 
                 # Process repository
@@ -402,7 +413,7 @@ class Collector:
 
                 # Save record and checkpoint
                 self._storage.save_repo_record(record)
-                self._storage.save_progress("last_repo", repo_data["full_name"])
+                self._storage.save_progress('last_repo', repo_data['full_name'])
 
                 repos_processed += 1
                 repos_qualified += 1
@@ -417,7 +428,7 @@ class Collector:
                     self._storage.save_run(run)
 
                 logger.info(
-                    "Progress",
+                    'Progress',
                     processed=repos_processed,
                     qualified=repos_qualified,
                     commits=total_commits,
@@ -429,15 +440,15 @@ class Collector:
             return run_id
 
         except KeyboardInterrupt:
-            logger.info("Collection interrupted by user")
+            logger.info('Collection interrupted by user')
             self.complete_collection(run_id, interrupted=True)
             sys.exit(0)
         except RateLimitExceeded as e:
-            logger.error("Rate limit exceeded", error=str(e))
+            logger.exception('Rate limit exceeded', error=str(e))
             self.complete_collection(run_id, failed=True)
             raise
         except Exception as e:
-            logger.error("Collection failed", error=str(e))
+            logger.exception('Collection failed', error=str(e))
             self.complete_collection(run_id, failed=True)
             raise
 
@@ -470,13 +481,13 @@ class Collector:
 
         if run.status == RunStatus.COMPLETED:
             logger.info(
-                "Collection completed",
+                'Collection completed',
                 run_id=run_id,
                 repos_processed=run.repos_processed,
                 repos_qualified=run.repos_qualified,
                 commits=run.total_commits_analyzed,
             )
         elif run.status == RunStatus.FAILED:
-            logger.error("Collection failed", run_id=run_id)
+            logger.error('Collection failed', run_id=run_id)
         else:
-            logger.info("Collection interrupted, can be resumed", run_id=run_id)
+            logger.info('Collection interrupted, can be resumed', run_id=run_id)

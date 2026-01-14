@@ -173,6 +173,7 @@ This constitution follows semantic versioning:
 ### Guidance Reference
 
 For runtime development guidance, refer to:
+
 - `AGENTS.md` — Agent-specific instructions
 - `CLAUDE.md` — Claude-specific development guidance
 - `pre-spec.md` — Full specification with implementation details

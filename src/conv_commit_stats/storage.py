@@ -13,19 +13,21 @@ from enum import StrEnum, auto
 from pathlib import Path
 from typing import Annotated
 
+import pandera.polars as pap
 from pydantic import BaseModel, Field, NonNegativeInt
 from tinydb import Query, TinyDB
 
 __all__ = (
-    "Storage",
-    "Run",
-    "RunStatus",
-    "RepoRecord",
-    "Progress",
-    "SearchCursor",
-    "ExportData",
-    "CommitTypeCounts",
-    "Methodology",
+    'CommitTypeCounts',
+    'ExportData',
+    'Methodology',
+    'Progress',
+    'RepoRecord',
+    'RepoRecordSchema',
+    'Run',
+    'RunStatus',
+    'SearchCursor',
+    'Storage',
 )
 
 
@@ -60,7 +62,7 @@ class Run(BaseModel):
         total_commits_analyzed: Sum of commits across all repos
     """
 
-    run_id: str = Field(pattern=r"^run_\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+    run_id: str = Field(pattern=r'^run_\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')
     started_at: datetime
     completed_at: datetime | None = None
     status: RunStatus
@@ -89,7 +91,7 @@ class RepoRecord(BaseModel):
     """
 
     run_id: str
-    repo: str = Field(pattern=r"^[\w.-]+/[\w.-]+$")
+    repo: str = Field(pattern=r'^[\w.-]+/[\w.-]+$')
     default_branch: str
     head_commit: str = Field(min_length=7, max_length=40)
     stars: Annotated[int, Field(ge=3)]
@@ -195,6 +197,45 @@ class ExportData(BaseModel):
 
 
 # =============================================================================
+# PANDERA SCHEMAS
+# =============================================================================
+
+
+def _create_repo_record_schema() -> pap.DataFrameSchema:
+    """Generate Pandera schema from RepoRecord Pydantic model.
+
+    This ensures schema stays in sync with RepoRecord fields automatically.
+    Note: datetime fields are serialized as ISO 8601 strings by model_dump(mode='json'),
+    so Pandera validates them as strings (Polars parses them automatically).
+    """
+    # Base schema with all RepoRecord fields
+    schema_dict: dict[str, pap.Column] = {
+        'run_id': pap.Column(str),
+        'repo': pap.Column(str, checks=pap.Check.str_matches(r'^[\w.-]+/[\w.-]+$')),
+        'default_branch': pap.Column(str),
+        'head_commit': pap.Column(str, checks=pap.Check.str_length(7, 40)),
+        'stars': pap.Column(int, checks=pap.Check.ge(3)),
+        'language': pap.Column(str, nullable=True),
+        # datetime fields serialized as ISO 8601 strings by model_dump(mode='json')
+        'created_at': pap.Column(str),  # ISO 8601 datetime string
+        'license': pap.Column(str, nullable=True),
+        'timestamp': pap.Column(str),  # ISO 8601 datetime string
+        'commits_analyzed': pap.Column(int, checks=pap.Check.ge(0)),
+    }
+
+    # Add all 11 commit type fields with non-negative constraint
+    # Use CommitTypeCounts.model_fields to ensure completeness
+    for field_name in CommitTypeCounts.model_fields.keys():
+        schema_dict[field_name] = pap.Column(int, checks=pap.Check.ge(0))
+
+    return pap.DataFrameSchema(schema_dict)
+
+
+# Create schema instance
+RepoRecordSchema = _create_repo_record_schema()
+
+
+# =============================================================================
 # STORAGE CLASS
 # =============================================================================
 
@@ -224,15 +265,15 @@ class Storage:
         self._db_path = Path(db_path)
         self._db_path.mkdir(parents=True, exist_ok=True)
 
-        self._runs_db = TinyDB(self._db_path / "runs.json")
-        self._repos_db = TinyDB(self._db_path / "repos.json")
-        self._progress_db = TinyDB(self._db_path / "progress.json")
+        self._runs_db = TinyDB(self._db_path / 'runs.json')
+        self._repos_db = TinyDB(self._db_path / 'repos.json')
+        self._progress_db = TinyDB(self._db_path / 'progress.json')
 
-        self._runs = self._runs_db.table("runs")
-        self._repos = self._repos_db.table("repos")
-        self._progress = self._progress_db.table("progress")
+        self._runs = self._runs_db.table('runs')
+        self._repos = self._repos_db.table('repos')
+        self._progress = self._progress_db.table('progress')
 
-    def __enter__(self) -> "Storage":
+    def __enter__(self) -> 'Storage':
         """Enter context manager."""
         return self
 
@@ -262,7 +303,7 @@ class Storage:
         """
         q = Query()
         self._runs.upsert(
-            run.model_dump(mode="json"),
+            run.model_dump(mode='json'),
             q.run_id == run.run_id,
         )
 
@@ -333,7 +374,7 @@ class Storage:
         """
         q = Query()
         self._repos.upsert(
-            record.model_dump(mode="json"),
+            record.model_dump(mode='json'),
             (q.run_id == record.run_id) & (q.repo == record.repo),
         )
 
@@ -361,7 +402,7 @@ class Storage:
         )
         q = Query()
         self._progress.upsert(
-            progress.model_dump(mode="json"),
+            progress.model_dump(mode='json'),
             q.key == key,
         )
 
@@ -376,7 +417,7 @@ class Storage:
         value = progress.value
 
         # If value is a dict (from JSON), try to deserialize as SearchCursor
-        if isinstance(value, dict) and key == "search_cursor":
+        if isinstance(value, dict) and key == 'search_cursor':
             try:
                 return SearchCursor(**value)
             except (TypeError, ValueError):
@@ -407,7 +448,7 @@ class Storage:
         """
         self.save_run(run)
         self.save_repo_record(record)
-        self.save_progress("last_repo", last_repo)
+        self.save_progress('last_repo', last_repo)
 
         if search_cursor is not None:
-            self.save_progress("search_cursor", search_cursor)
+            self.save_progress('search_cursor', search_cursor)
