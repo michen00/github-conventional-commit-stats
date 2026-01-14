@@ -198,7 +198,7 @@ BOT_PATTERNS = [
 ### Animation Specifications
 
 | Animation | Duration | Easing |
-|-----------|----------|--------|
+| --------- | -------- | ------ |
 | Legend toggle (show/hide bar) | 250ms | ease-out |
 | Hover highlight | 150ms | ease-in-out |
 | Theme transition | 200ms | ease |
@@ -219,7 +219,7 @@ BOT_PATTERNS = [
 ### Color Palette (IBM Design Language - Colorblind Safe)
 
 | Commit Type | Light Theme | Dark Theme | Hex |
-|-------------|-------------|------------|-----|
+| ----------- | ----------- | ---------- | --- |
 | feat | Blue 60 | Blue 50 | `#0043ce` / `#4589ff` |
 | fix | Red 60 | Red 50 | `#da1e28` / `#fa4d56` |
 | docs | Teal 60 | Teal 50 | `#007d79` / `#08bdba` |
@@ -237,7 +237,7 @@ BOT_PATTERNS = [
 **Live Region Announcements** (using `aria-live="polite"`):
 
 | Event | Announcement |
-|-------|--------------|
+| ----- | ------------ |
 | Chart loaded | "Commit type distribution chart loaded. {total} commits across {repos} repositories." |
 | Legend item toggled ON | "{type} commits shown. {count} commits, {percent}% of total." |
 | Legend item toggled OFF | "{type} commits hidden." |
@@ -247,7 +247,7 @@ BOT_PATTERNS = [
 ### Accessibility: Focus Management
 
 | Interaction | Focus Behavior |
-|-------------|----------------|
+| ----------- | -------------- |
 | Tab through legend | Focus moves to each legend item in order |
 | Enter on legend item | Toggle visibility, focus remains on item |
 | Escape on legend item | No action (focus remains) |

@@ -107,7 +107,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 ### Functional Requirements
 
-**Data Collection**
+#### Data Collection
 
 - **FR-001**: System MUST discover repositories using GitHub Search API with filters: ≥3 stars, pushed within rolling 365-day window from collection start, public, not archived, not a fork, has license
 - **FR-002**: System MUST analyze up to 100 conventional commits per repository from the last year
@@ -117,19 +117,19 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-006**: System MUST save progress after each completed repository to enable resumability
 - **FR-007**: System MUST support graceful interruption (SIGINT/SIGTERM) without losing progress
 
-**Rate Limiting**
+#### Rate Limiting
 
 - **FR-008**: System MUST respect GitHub API rate limits by checking remaining quota before requests
 - **FR-009**: System MUST implement exponential backoff with jitter for transient failures
 - **FR-010**: System MUST support both PAT (5000 requests/hour) and GITHUB_TOKEN (1000 requests/hour) rate limits
 
-**Data Storage**
+#### Data Storage
 
 - **FR-011**: System MUST persist run metadata, repository data, and progress checkpoints as JSON files
 - **FR-012**: System MUST maintain referential integrity between runs and their repository records
 - **FR-013**: System MUST retain only the 3 most recent completed runs, with older data accessible via git history
 
-**CLI Interface**
+#### CLI Interface
 
 - **FR-014**: System MUST provide a `collect` command with options for max repos, minimum stars, and resume
 - **FR-015**: System MUST provide an `export` command that produces visualization-ready JSON
@@ -137,7 +137,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-017**: System MUST provide a `status` command to show current progress and statistics
 - **FR-018**: System MUST provide a `prune` command to clean up old runs
 
-**Visualization**
+#### Visualization
 
 - **FR-019**: Visualization MUST display a horizontal bar chart of commit type frequencies
 - **FR-020**: Visualization MUST support interactive legend toggling with animated transitions
@@ -145,14 +145,14 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-022**: Visualization MUST respect system color scheme preference and support manual theme toggle
 - **FR-023**: Visualization MUST include a methodology section explaining data collection approach
 
-**Accessibility**
+#### Accessibility
 
 - **FR-024**: Visualization MUST use a colorblind-safe color palette
 - **FR-025**: Visualization MUST be fully keyboard-navigable (tab through legend, Enter to toggle)
 - **FR-026**: Visualization MUST include ARIA labels on all interactive elements
 - **FR-027**: Visualization MUST meet WCAG AA contrast requirements
 
-**Automation**
+#### Automation
 
 - **FR-028**: CI workflow MUST run collection on a monthly schedule (cron: `0 4 1 * *` - 4 AM UTC on the 1st of each month)
 - **FR-029**: CI workflow MUST automatically commit updated data and trigger deployment

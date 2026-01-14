@@ -1,3 +1,4 @@
+---
 name: Collect Conventional Commit Statistics
 
 on:
@@ -5,13 +6,13 @@ on:
     # Run monthly on the 1st at 4 AM UTC
     - cron: "0 4 1 * *"
   workflow_dispatch:
-    # Allow manual triggering
+  # Allow manual triggering
 
 jobs:
   collect:
     name: Collect and Deploy Statistics
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # 6 hours max
+    timeout-minutes: 360 # 6 hours max
 
     steps:
       - name: Checkout repository
@@ -54,13 +55,15 @@ jobs:
         id: check-changes
         run: |
           if git diff --quiet docs/data.json; then
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Commit and push changes
-        if: steps.check-changes.outputs.changed == 'true' && steps.validate.outcome == 'success'
+        if: >
+          steps.check-changes.outputs.changed == 'true' &&
+          steps.validate.outcome == 'success'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -76,12 +79,15 @@ jobs:
           git checkout HEAD -- docs/data.json data/
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -m "chore(data): revert invalid data collection" || echo "No changes to revert"
+          git commit -m "chore(data): revert invalid data collection" ||
+            echo "No changes to revert"
           git push || echo "Nothing to push"
           exit 1
 
       - name: Deploy to GitHub Pages
-        if: steps.check-changes.outputs.changed == 'true' && steps.validate.outcome == 'success'
+        if: >
+          steps.check-changes.outputs.changed == 'true' &&
+          steps.validate.outcome == 'success'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

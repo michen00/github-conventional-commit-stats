@@ -37,7 +37,7 @@ This document defines the data entities, their attributes, relationships, and va
 
 Represents a single collection execution with status, timestamps, and aggregate statistics.
 
-### Attributes
+### Run Attributes
 
 | Field                    | Type               | Required | Description                                     |
 | ------------------------ | ------------------ | -------- | ----------------------------------------------- |
@@ -70,7 +70,7 @@ Represents a single collection execution with status, timestamps, and aggregate 
                  └──────────┘
 ```
 
-### Validation Rules
+### Run Validation Rules
 
 - `run_id` MUST be unique across all runs
 - `run_id` format: `run_{YYYY-MM-DDTHH:MM:SSZ}`
@@ -102,7 +102,7 @@ Represents a single collection execution with status, timestamps, and aggregate 
 
 Captures data about a single analyzed repository including commit type counts.
 
-### Attributes
+### RepoRecord Attributes
 
 | Field              | Type          | Required | Description                             |
 | ------------------ | ------------- | -------- | --------------------------------------- |
@@ -128,7 +128,7 @@ Captures data about a single analyzed repository including commit type counts.
 | `style`            | `int`         | ✓        | Count of `style:` commits               |
 | `test`             | `int`         | ✓        | Count of `test:` commits                |
 
-### Validation Rules
+### RepoRecord Validation Rules
 
 - `repo` MUST be unique within a run (composite key: `run_id` + `repo`)
 - All commit type counts MUST be ≥ 0
@@ -173,7 +173,7 @@ Captures data about a single analyzed repository including commit type counts.
 
 Stores resumption state for interrupted collection runs.
 
-### Attributes
+### Progress Attributes
 
 | Field        | Type          | Required | Description                                          |
 | ------------ | ------------- | -------- | ---------------------------------------------------- |
@@ -189,7 +189,7 @@ Stores resumption state for interrupted collection runs.
 | `search_cursor` | `{stars_range: str, page: int}` | Position in search pagination        |
 | `last_repo`     | `str`                           | Last fully-processed repository name |
 
-### Validation Rules
+### Progress Validation Rules
 
 - Each key MUST appear at most once per run
 - `search_cursor.page` MUST be ≥ 1
@@ -225,7 +225,7 @@ Stores resumption state for interrupted collection runs.
 
 The visualization-consumable format containing aggregated commit type counts.
 
-### Attributes
+### ExportData Attributes
 
 | Field           | Type               | Required | Description                           |
 | --------------- | ------------------ | -------- | ------------------------------------- |
@@ -458,7 +458,7 @@ class ExportData(BaseModel):
 ### Missing vs Empty Storage Files
 
 | Scenario | Behavior |
-|----------|----------|
+| -------- | -------- |
 | File does not exist | Create new empty TinyDB table; proceed normally |
 | File exists but is empty (0 bytes) | Treat as corrupted; log warning and recreate |
 | File exists with valid JSON `{}` | Valid empty table; proceed normally |

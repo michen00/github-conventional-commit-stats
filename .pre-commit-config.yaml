@@ -122,7 +122,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        args: ["--skip", "*.ipynb"]
+        args: ["--skip", "*.ipynb", "--skip", "_typos.toml"]
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
     hooks:

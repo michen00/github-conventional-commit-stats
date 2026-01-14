@@ -15,7 +15,7 @@ import typer
 from rich.console import Console
 
 from conv_commit_stats.collector import Collector
-from conv_commit_stats.github_client import GitHubClient, RateLimitExceeded
+from conv_commit_stats.github_client import GitHubClient, RateLimitExceededError
 from conv_commit_stats.storage import (
     CommitTypeCounts,
     ExportData,
@@ -55,7 +55,7 @@ def get_github_token() -> str:
     if not token:
         console.print('[red]Error: GITHUB_TOKEN environment variable not set[/red]')
         console.print('[yellow]Set it with: export GITHUB_TOKEN=your_token[/yellow]')
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     return token
 
 
@@ -63,7 +63,7 @@ def get_github_token() -> str:
 def collect(
     max_repos: int = typer.Option(1000, help='Maximum repositories to analyze'),
     min_stars: int = typer.Option(3, help='Minimum star count filter'),
-    resume: bool = typer.Option(False, help='Resume from last checkpoint'),
+    resume: bool = typer.Option(default=False, help='Resume from last checkpoint'),  # noqa: FBT001
     db_path: str | None = typer.Option(
         None,
         help='Override data directory path (default: ./data)',
@@ -87,18 +87,18 @@ def collect(
             run_id = collector.run(resume=resume)
             console.print(f'[green]Collection completed: {run_id}[/green]')
 
-    except RateLimitExceeded as e:
+    except RateLimitExceededError as e:
         console.print('[red]Rate limit exceeded[/red]')
         if e.reset_at:
             console.print(f'Reset at: {e.reset_at}')
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except KeyboardInterrupt:
         console.print('\n[yellow]Collection interrupted[/yellow]')
-        raise typer.Exit(0)
+        raise typer.Exit(0) from None
     except Exception as e:
         logger.exception('Collection failed', error=str(e))
         console.print(f'[red]Collection failed: {e}[/red]')
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 def aggregate_run_data(repos: list[RepoRecord]) -> tuple[CommitTypeCounts, int]:
@@ -121,14 +121,14 @@ def aggregate_run_data(repos: list[RepoRecord]) -> tuple[CommitTypeCounts, int]:
     # Convert to DataFrame
     # model_dump(mode='json') serializes datetime to ISO 8601 strings
     repo_dicts = [repo.model_dump(mode='json') for repo in repos]
-    df = pl.DataFrame(repo_dicts)
+    repo_df = pl.DataFrame(repo_dicts)
 
     # Handle nullable columns: convert None to empty string for string columns
     # This ensures Polars creates String type columns instead of Null type
     nullable_string_cols = ['language', 'license']
     for col in nullable_string_cols:
-        if col in df.columns:
-            df = df.with_columns(
+        if col in repo_df.columns:
+            repo_df = repo_df.with_columns(
                 pl.when(pl.col(col).is_null())
                 .then(pl.lit(''))
                 .otherwise(pl.col(col))
@@ -137,16 +137,16 @@ def aggregate_run_data(repos: list[RepoRecord]) -> tuple[CommitTypeCounts, int]:
 
     # Validate schema with Pandera (ensures all fields present, correct types)
     # This catches missing fields, wrong types, or constraint violations
-    RepoRecordSchema.validate(df)
+    RepoRecordSchema.validate(repo_df)
 
     # Get commit type columns (all fields in CommitTypeCounts)
     # This ensures we aggregate all 11 types automatically
     commit_type_cols = list(CommitTypeCounts.model_fields.keys())
 
     # Aggregate using Polars vectorized sum (faster than Python loops)
-    aggregated = df.select([
-        pl.sum(col).alias(col) for col in commit_type_cols
-    ]).to_dicts()[0]
+    aggregated = repo_df.select(
+        [pl.sum(col).alias(col) for col in commit_type_cols]
+    ).to_dicts()[0]
 
     # Create CommitTypeCounts from aggregated dict
     # Pydantic validates NonNegativeInt constraints here
@@ -180,13 +180,13 @@ def export(
                 run_obj = storage.get_latest_completed_run()
                 if run_obj is None:
                     console.print('[red]No completed runs found[/red]')
-                    raise typer.Exit(1)
+                    raise typer.Exit(1) from None  # noqa: TRY301
                 run_id = run_obj.run_id
             else:
                 run_obj = storage.get_run(run)
                 if run_obj is None:
                     console.print(f'[red]Run not found: {run}[/red]')
-                    raise typer.Exit(1)
+                    raise typer.Exit(1) from None  # noqa: TRY301
                 run_id = run
 
             # Get all repos for the run
@@ -196,7 +196,7 @@ def export(
                 console.print(
                     f'[yellow]No repositories found for run {run_id}[/yellow]'
                 )
-                raise typer.Exit(1)
+                raise typer.Exit(1) from None  # noqa: TRY301
 
             # Aggregate commit counts using Polars + Pandera
             try:
@@ -204,7 +204,7 @@ def export(
             except pandera.errors.SchemaError as e:
                 logger.exception('Schema validation failed', error=str(e))
                 console.print(f'[red]Data validation failed: {e}[/red]')
-                raise typer.Exit(1)
+                raise typer.Exit(1) from None
 
             # Create export data
             export_data = ExportData(
@@ -246,7 +246,7 @@ def export(
     except Exception as e:
         logger.exception('Export failed', error=str(e))
         console.print(f'[red]Export failed: {e}[/red]')
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
@@ -269,12 +269,12 @@ def validate(
                 run_obj = storage.get_run(run)
                 if run_obj is None:
                     console.print(f'[red]Run not found: {run}[/red]')
-                    raise typer.Exit(1)
+                    raise typer.Exit(1) from None  # noqa: TRY301
                 runs = [run_obj]
 
             if not runs:
                 console.print('[yellow]No runs to validate[/yellow]')
-                raise typer.Exit(0)
+                raise typer.Exit(0) from None  # noqa: TRY301
 
             all_valid = True
             for run_obj in runs:
@@ -299,7 +299,8 @@ def validate(
                     )
                     if repo.commits_analyzed != expected_sum:
                         console.print(
-                            f'[red]  ✗ Repo {repo.repo}: commits_analyzed mismatch[/red]'
+                            f'[red]  ✗ Repo {repo.repo}: '
+                            f'commits_analyzed mismatch[/red]'
                         )
                         all_valid = False
 
@@ -307,16 +308,16 @@ def validate(
 
             if all_valid:
                 console.print('[green]All checks passed[/green]')
-                raise typer.Exit(0)
+                raise typer.Exit(0) from None  # noqa: TRY301
             console.print('[red]Some checks failed[/red]')
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None  # noqa: TRY301
 
     except typer.Exit:
         raise  # Re-raise typer.Exit to preserve exit code
     except Exception as e:
         logger.exception('Validation failed', error=str(e))
         console.print(f'[red]Validation failed: {e}[/red]')
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
@@ -374,7 +375,8 @@ def status(
                     f'\n[green]Most Recent Completed: {latest_completed.run_id}[/green]'
                 )
                 console.print(
-                    f'  Repos: {latest_completed.repos_qualified} qualified / {latest_completed.repos_processed} processed'
+                    f'  Repos: {latest_completed.repos_qualified} qualified / '
+                    f'{latest_completed.repos_processed} processed'
                 )
                 console.print(
                     f'  Commits: {latest_completed.total_commits_analyzed} analyzed'
@@ -388,13 +390,13 @@ def status(
     except Exception as e:
         logger.exception('Status check failed', error=str(e))
         console.print(f'[red]Status check failed: {e}[/red]')
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
 def prune(
     keep: int = typer.Option(3, help='Number of recent runs to keep'),
-    dry_run: bool = typer.Option(False, '--dry-run', help='Show what would be deleted'),
+    dry_run: bool = typer.Option(False, '--dry-run', help='Show what would be deleted'),  # noqa: FBT001, FBT003
     db_path: str | None = typer.Option(
         None,
         help='Override data directory path (default: ./data)',
@@ -432,7 +434,7 @@ def prune(
     except Exception as e:
         logger.exception('Prune failed', error=str(e))
         console.print(f'[red]Prune failed: {e}[/red]')
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 if __name__ == '__main__':

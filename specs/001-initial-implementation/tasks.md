@@ -144,7 +144,7 @@
 ### CLI Implementation
 
 - [x] T053 [US2] Create Typer app with global options (--db-path, --help, --version) in src/conv_commit_stats/cli.py
-- [x] T054 [US2] Implement Settings class with pydantic-settings for GITHUB_TOKEN, CCC_* env vars in src/conv_commit_stats/cli.py
+- [x] T054 [US2] Implement Settings class with pydantic-settings for GITHUB*TOKEN, CCC*\* env vars in src/conv_commit_stats/cli.py
 - [x] T055 [US2] Implement collect command with --max-repos, --min-stars, --resume options in src/conv_commit_stats/cli.py
 - [x] T056 [US2] Implement concurrency check (no parallel runs) in collect command in src/conv_commit_stats/cli.py
 - [x] T057 [US2] Implement validate command with integrity checks per cli.md in src/conv_commit_stats/cli.py
@@ -186,7 +186,7 @@
 
 ### CI/CD Implementation
 
-- [x] T067 [US5] Create .github/workflows/collect.yml with monthly cron schedule (0 4 1 **)
+- [x] T067 [US5] Create .github/workflows/collect.yml with monthly cron schedule (0 4 1 \*\*)
 - [x] T068 [US5] Add workflow_dispatch trigger for manual runs in .github/workflows/collect.yml
 - [x] T069 [US5] Implement collection step with 6-hour timeout in .github/workflows/collect.yml
 - [x] T070 [US5] Implement export and validate steps in .github/workflows/collect.yml
@@ -202,7 +202,7 @@
 
 **Purpose**: Documentation, cleanup, and final validation
 
-- [x] T074 [P] Update src/conv_commit_stats/__init__.py with public API exports
+- [x] T074 [P] Update src/conv_commit_stats/**init**.py with public API exports
 - [x] T075 [P] Add py.typed marker file for PEP 561 compliance
 - [x] T076 [P] Verify ≥80% test coverage with `make test`
 - [x] T077 Run quickstart.md validation: full workflow from clone to visualization
@@ -239,12 +239,12 @@ Phase 3 (US1)             Phase 4 (US2)             [Can parallelize]
 
 ### User Story Dependencies
 
-| Story | Depends On | Can Start After |
-|-------|------------|-----------------|
+| Story    | Depends On   | Can Start After  |
+| -------- | ------------ | ---------------- |
 | US1 (P1) | Foundational | Phase 2 complete |
 | US2 (P2) | Foundational | Phase 2 complete |
-| US3 (P3) | US2 | Phase 4 complete |
-| US5 (P5) | US2, US3 | Phase 5 complete |
+| US3 (P3) | US2          | Phase 4 complete |
+| US5 (P5) | US2, US3     | Phase 5 complete |
 
 ### Within Each Phase
 
@@ -312,16 +312,16 @@ Week 3: US3 + US5 + Polish
 
 ## Summary
 
-| Phase | Tasks | Parallelizable |
-|-------|-------|----------------|
-| Phase 1: Setup | 6 | 4 |
-| Phase 2: Foundational | 16 | 6 |
-| Phase 3: US1 (P1) | 16 | 15 |
-| Phase 4: US2 (P2) | 22 | 8 |
-| Phase 5: US3 (P3) | 6 | 2 |
-| Phase 6: US5 (P5) | 7 | 0 |
-| Phase 7: Polish | 7 | 4 |
-| **Total** | **80** | **39** |
+| Phase                 | Tasks  | Parallelizable |
+| --------------------- | ------ | -------------- |
+| Phase 1: Setup        | 6      | 4              |
+| Phase 2: Foundational | 16     | 6              |
+| Phase 3: US1 (P1)     | 16     | 15             |
+| Phase 4: US2 (P2)     | 22     | 8              |
+| Phase 5: US3 (P3)     | 6      | 2              |
+| Phase 6: US5 (P5)     | 7      | 0              |
+| Phase 7: Polish       | 7      | 4              |
+| **Total**             | **80** | **39**         |
 
 ---
 

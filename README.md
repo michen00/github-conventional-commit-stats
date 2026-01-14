@@ -40,6 +40,7 @@ uv run conv-commit-stats --help
    - Generate and copy the token
 
 2. **Set environment variable:**
+
    ```bash
    export GITHUB_TOKEN="ghp_your_token_here"
    ```
@@ -93,7 +94,7 @@ make check
 
 ## Project Structure
 
-```
+```tree
 .
 ├── src/conv_commit_stats/    # Python package
 │   ├── cli.py                 # CLI commands

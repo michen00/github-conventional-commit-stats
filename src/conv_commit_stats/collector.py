@@ -10,11 +10,11 @@ This module coordinates:
 import signal
 import sys
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 import structlog
 
-from conv_commit_stats.github_client import GitHubClient, RateLimitExceeded
+from conv_commit_stats.github_client import GitHubClient, RateLimitExceededError
 from conv_commit_stats.parsing import (
     CommitType,
     is_bot,
@@ -42,7 +42,7 @@ class Collector:
     """
 
     # Star ranges for search pagination (bypasses 1000-result limit)
-    STAR_RANGES = [
+    STAR_RANGES: ClassVar[list[str]] = [
         'stars:10000..*',
         'stars:5000..10000',
         'stars:1000..5000',
@@ -51,7 +51,7 @@ class Collector:
         'stars:3..100',
     ]
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         storage: Storage,
         github_client: GitHubClient,
@@ -87,9 +87,9 @@ class Collector:
             pass
         else:
             signal.signal(signal.SIGINT, lambda s, f: self._handle_signal(s, f))
-            signal.signal(signal.SIGTERM, lambda s, f: self._handle_signal(s, f))
+            signal.signal(signal.SIGTERM, lambda s, _f: self._handle_signal(s, _f))
 
-    def _handle_signal(self, signum: int, frame: object) -> None:
+    def _handle_signal(self, signum: int, frame: object) -> None:  # noqa: ARG002
         """Handle SIGINT/SIGTERM gracefully.
 
         Sets interruption flag so the collector can finish current repo
@@ -150,7 +150,7 @@ class Collector:
         self._current_run_id = run_id
         logger.info('Resuming collection run', run_id=run_id)
 
-    def discover_repositories(self) -> list[dict[str, Any]]:
+    def discover_repositories(self) -> list[dict[str, Any]]:  # noqa: C901, PLR0912, PLR0915
         """Discover repositories using GitHub Search API.
 
         Uses star-range bucketing to bypass the 1000-result limit.
@@ -159,7 +159,7 @@ class Collector:
             List of repository data dictionaries
 
         Raises:
-            RateLimitExceeded: If rate limit is exceeded
+            RateLimitExceededError: If rate limit is exceeded
         """
         repos: list[dict[str, Any]] = []
         processed_repos: set[str] = set()
@@ -262,7 +262,7 @@ class Collector:
                         logger.info('Collection interrupted during discovery')
                         return repos
 
-                except RateLimitExceeded as e:
+                except RateLimitExceededError as e:
                     logger.exception(
                         'Rate limit exceeded during discovery', error=str(e)
                     )
@@ -355,9 +355,8 @@ class Collector:
                 commits=commits_analyzed,
             )
 
-            return record
-
-        except Exception as e:
+            return record  # noqa: TRY300
+        except Exception as e:  # noqa: BLE001
             logger.warning(
                 'Failed to process repository',
                 repo=repo_name,
@@ -365,7 +364,7 @@ class Collector:
             )
             return None
 
-    def run(self, resume: bool = False) -> str:
+    def run(self, *, resume: bool = False) -> str:
         """Run the full collection process.
 
         Args:
@@ -376,7 +375,7 @@ class Collector:
 
         Raises:
             RuntimeError: If concurrent run detected
-            RateLimitExceeded: If rate limit exceeded
+            RateLimitExceededError: If rate limit exceeded
         """
         # Start or resume collection
         if resume:
@@ -436,14 +435,12 @@ class Collector:
 
             # Complete collection
             self.complete_collection(run_id)
-
-            return run_id
-
+            return run_id  # noqa: TRY300  # noqa: TRY300
         except KeyboardInterrupt:
             logger.info('Collection interrupted by user')
             self.complete_collection(run_id, interrupted=True)
             sys.exit(0)
-        except RateLimitExceeded as e:
+        except RateLimitExceededError as e:
             logger.exception('Rate limit exceeded', error=str(e))
             self.complete_collection(run_id, failed=True)
             raise
@@ -455,6 +452,7 @@ class Collector:
     def complete_collection(
         self,
         run_id: str,
+        *,
         interrupted: bool = False,
         failed: bool = False,
     ) -> None:

@@ -76,7 +76,7 @@ uv run conv-commit-stats collect [OPTIONS]
 
 **Output** (stdout):
 
-```
+```text
 Starting collection run: run_2026-01-12T04:00:00Z
 [1/1000] facebook/react: 100 commits (feat: 25, fix: 18, ...)
 [2/1000] microsoft/vscode: 95 commits (feat: 30, fix: 22, ...)
@@ -117,7 +117,7 @@ uv run conv-commit-stats export [OPTIONS]
 
 **Output** (stdout):
 
-```
+```text
 Exporting run: run_2026-01-12T04:00:00Z
 Aggregating 847 repositories...
 Written to: docs/data.json
@@ -158,7 +158,7 @@ uv run conv-commit-stats validate [OPTIONS]
 
 **Output** (stdout):
 
-```
+```text
 Validating run: run_2026-01-12T04:00:00Z
 ✓ Schema validity: OK
 ✓ Referential integrity: OK
@@ -169,7 +169,7 @@ All checks passed.
 
 **Output** (on failure):
 
-```
+```text
 Validating run: run_2026-01-12T04:00:00Z
 ✓ Schema validity: OK
 ✗ Referential integrity: FAILED
@@ -203,7 +203,7 @@ uv run conv-commit-stats status
 
 **Output** (stdout):
 
-```
+```text
 Current Run: run_2026-01-12T04:00:00Z (running)
   Progress: 523/1000 repos processed
   Last repo: microsoft/TypeScript
@@ -248,7 +248,7 @@ uv run conv-commit-stats prune [OPTIONS]
 
 **Output** (stdout):
 
-```
+```text
 Pruning runs (keeping 3 most recent)...
 Deleting: run_2025-10-01T04:00:00Z (523 repos)
 Deleting: run_2025-09-01T04:00:00Z (498 repos)
@@ -333,7 +333,7 @@ uv run conv-commit-stats prune --keep 1 --dry-run
 
 Each command should display help in this format:
 
-```
+```text
 Usage: conv-commit-stats COMMAND [OPTIONS]
 
 Conventional Commit Census CLI

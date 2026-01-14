@@ -2,7 +2,7 @@
 
 from conv_commit_stats.cli import app
 from conv_commit_stats.collector import Collector
-from conv_commit_stats.github_client import GitHubClient, RateLimitExceeded
+from conv_commit_stats.github_client import GitHubClient, RateLimitExceededError
 from conv_commit_stats.parsing import (
     BOT_PATTERNS,
     CONVENTIONAL_COMMIT_PATTERN,
@@ -37,7 +37,7 @@ __all__ = (
     'GitHubClient',
     'Methodology',
     'Progress',
-    'RateLimitExceeded',
+    'RateLimitExceededError',
     'RepoRecord',
     'Run',
     'RunStatus',

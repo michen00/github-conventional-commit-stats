@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 
 from conv_commit_stats.cli import app
-from conv_commit_stats.storage import Run, RunStatus, Storage
+from conv_commit_stats.storage import RepoRecord, Run, RunStatus, Storage
 
 runner = CliRunner()
 
@@ -56,10 +56,11 @@ class TestCollectCommand:
     """Test the collect command."""
 
     @patch.dict(os.environ, {'GITHUB_TOKEN': 'test-token'}, clear=False)
-    @patch('conv_commit_stats.cli.GitHubClient')
     @patch('conv_commit_stats.cli.Collector')
     def test_collect_command_basic(
-        self, mock_collector_class, mock_github_client_class, tmp_db_path: Path
+        self,
+        mock_collector_class: MagicMock,
+        tmp_db_path: Path,
     ) -> None:
         """Collect command runs successfully with valid token."""
         # Mock the collector
@@ -84,10 +85,11 @@ class TestCollectCommand:
         mock_collector.run.assert_called_once()
 
     @patch.dict(os.environ, {'GITHUB_TOKEN': 'test-token'}, clear=False)
-    @patch('conv_commit_stats.cli.GitHubClient')
     @patch('conv_commit_stats.cli.Collector')
     def test_collect_with_resume(
-        self, mock_collector_class, mock_github_client_class, tmp_db_path: Path
+        self,
+        mock_collector_class: MagicMock,
+        tmp_db_path: Path,
     ) -> None:
         """Collect command supports --resume flag."""
         mock_collector = MagicMock()
@@ -113,8 +115,6 @@ class TestExportCommand:
 
     def test_export_command_basic(self, tmp_db_path: Path) -> None:
         """Export command exports data to JSON."""
-        from conv_commit_stats.storage import RepoRecord
-
         # Create a completed run with data
         with Storage(tmp_db_path) as storage:
             run = Run(
@@ -200,8 +200,6 @@ class TestValidateCommand:
 
     def test_validate_passes_with_valid_data(self, tmp_db_path: Path) -> None:
         """Validate command passes with valid data."""
-        from conv_commit_stats.storage import RepoRecord
-
         with Storage(tmp_db_path) as storage:
             run = Run(
                 run_id='run_2026-01-12T04:00:00Z',
@@ -256,7 +254,13 @@ class TestExportErrorPaths:
         """Export fails gracefully when no completed runs exist."""
         result = runner.invoke(
             app,
-            ['export', '--output', str(tmp_db_path / 'export.json'), '--db-path', str(tmp_db_path)],
+            [
+                'export',
+                '--output',
+                str(tmp_db_path / 'export.json'),
+                '--db-path',
+                str(tmp_db_path),
+            ],
         )
 
         assert result.exit_code == 1
@@ -274,8 +278,6 @@ class TestExportErrorPaths:
 
     def test_export_with_no_repos(self, tmp_db_path: Path) -> None:
         """Export fails gracefully when run has no repos."""
-        from conv_commit_stats.storage import Run, RunStatus
-
         with Storage(tmp_db_path) as storage:
             run = Run(
                 run_id='run_2026-01-12T04:00:00Z',
@@ -290,7 +292,13 @@ class TestExportErrorPaths:
 
         result = runner.invoke(
             app,
-            ['export', '--output', str(tmp_db_path / 'export.json'), '--db-path', str(tmp_db_path)],
+            [
+                'export',
+                '--output',
+                str(tmp_db_path / 'export.json'),
+                '--db-path',
+                str(tmp_db_path),
+            ],
         )
 
         assert result.exit_code == 1
@@ -312,8 +320,6 @@ class TestValidateErrorPaths:
 
     def test_validate_detects_data_integrity_issues(self, tmp_db_path: Path) -> None:
         """Validate detects when commit counts don't sum correctly."""
-        from conv_commit_stats.storage import RepoRecord, Run, RunStatus
-
         with Storage(tmp_db_path) as storage:
             run = Run(
                 run_id='run_2026-01-12T04:00:00Z',
@@ -344,7 +350,13 @@ class TestValidateErrorPaths:
 
         result = runner.invoke(
             app,
-            ['validate', '--run', 'run_2026-01-12T04:00:00Z', '--db-path', str(tmp_db_path)],
+            [
+                'validate',
+                '--run',
+                'run_2026-01-12T04:00:00Z',
+                '--db-path',
+                str(tmp_db_path),
+            ],
         )
 
         assert result.exit_code == 1
@@ -357,8 +369,6 @@ class TestCollectErrorPaths:
     @patch.dict(os.environ, {'GITHUB_TOKEN': 'test-token'}, clear=False)
     def test_collect_with_concurrent_run(self, tmp_db_path: Path) -> None:
         """Collect fails when another run is already in progress."""
-        from conv_commit_stats.storage import Run, RunStatus, Storage
-
         # Create a running run
         with Storage(tmp_db_path) as storage:
             run = Run(
@@ -375,7 +385,9 @@ class TestCollectErrorPaths:
         )
 
         assert result.exit_code != 0
-        assert 'in progress' in result.stdout.lower() or 'error' in result.stdout.lower()
+        assert (
+            'in progress' in result.stdout.lower() or 'error' in result.stdout.lower()
+        )
 
 
 class TestPruneCommand:

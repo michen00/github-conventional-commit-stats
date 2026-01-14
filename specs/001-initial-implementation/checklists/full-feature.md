@@ -125,31 +125,31 @@
 
 ## Summary
 
-| Status | Count | Percentage |
-|--------|-------|------------|
-| ✅ Completed | 72 | 100% |
-| ⚠️ Outstanding | 0 | 0% |
-| **Total** | **72** | **100%** |
+| Status         | Count  | Percentage |
+| -------------- | ------ | ---------- |
+| ✅ Completed   | 72     | 100%       |
+| ⚠️ Outstanding | 0      | 0%         |
+| **Total**      | **72** | **100%**   |
 
 ## Gaps Addressed in This Review
 
-| CHK | Gap Description | Resolution | Document |
-|-----|-----------------|------------|----------|
-| CHK006 | Rolling vs fixed date | Clarified as "rolling 365-day window" | spec.md §FR-001 |
-| CHK012 | Corrupted progress file | Added error handling table | data-model.md §8 |
-| CHK013 | Concurrent run prevention | Added concurrency check behavior | cli.md §collect |
-| CHK018 | Rate limit reset during sleep | Added re-check after wake | cli.md §Error Handling |
-| CHK025 | Missing vs empty files | Added scenario/behavior table | data-model.md §8 |
-| CHK034 | Animation durations | Added animation specifications | research.md §7 |
-| CHK037 | localStorage key name | Specified `ccc-theme-preference` | research.md §7 |
-| CHK039 | data.json load failure | Added edge case | spec.md Edge Cases |
-| CHK041 | Color mapping | Added full 11-type color table | research.md §7 |
-| CHK045 | Screen reader announcements | Added live region table | research.md §7 |
-| CHK046 | Focus management | Added focus behavior table | research.md §7 |
-| CHK053 | Automated commit format | Added FR-031 | spec.md §Automation |
-| CHK054 | Manual workflow trigger | Added FR-032 | spec.md §Automation |
-| CHK071 | Partial failure behavior | Added edge case | spec.md Edge Cases |
-| CHK072 | Schema migration | Added policy with rationale | data-model.md §8 |
+| CHK    | Gap Description               | Resolution                            | Document               |
+| ------ | ----------------------------- | ------------------------------------- | ---------------------- |
+| CHK006 | Rolling vs fixed date         | Clarified as "rolling 365-day window" | spec.md §FR-001        |
+| CHK012 | Corrupted progress file       | Added error handling table            | data-model.md §8       |
+| CHK013 | Concurrent run prevention     | Added concurrency check behavior      | cli.md §collect        |
+| CHK018 | Rate limit reset during sleep | Added re-check after wake             | cli.md §Error Handling |
+| CHK025 | Missing vs empty files        | Added scenario/behavior table         | data-model.md §8       |
+| CHK034 | Animation durations           | Added animation specifications        | research.md §7         |
+| CHK037 | localStorage key name         | Specified `ccc-theme-preference`      | research.md §7         |
+| CHK039 | data.json load failure        | Added edge case                       | spec.md Edge Cases     |
+| CHK041 | Color mapping                 | Added full 11-type color table        | research.md §7         |
+| CHK045 | Screen reader announcements   | Added live region table               | research.md §7         |
+| CHK046 | Focus management              | Added focus behavior table            | research.md §7         |
+| CHK053 | Automated commit format       | Added FR-031                          | spec.md §Automation    |
+| CHK054 | Manual workflow trigger       | Added FR-032                          | spec.md §Automation    |
+| CHK071 | Partial failure behavior      | Added edge case                       | spec.md Edge Cases     |
+| CHK072 | Schema migration              | Added policy with rationale           | data-model.md §8       |
 
 ---
 

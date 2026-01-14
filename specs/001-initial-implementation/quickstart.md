@@ -147,7 +147,7 @@ make check
 
 After collection, data is stored in:
 
-```
+```tree
 data/
 ├── runs.json       # Run metadata
 ├── repos.json      # Per-repo commit counts

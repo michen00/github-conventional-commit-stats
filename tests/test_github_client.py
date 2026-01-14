@@ -17,7 +17,7 @@ import respx
 
 from conv_commit_stats.github_client import (
     GitHubClient,
-    RateLimitExceeded,
+    RateLimitExceededError,
     calculate_backoff_with_jitter,
 )
 
@@ -61,7 +61,7 @@ class TestGitHubClientBasics:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         repos = client.search_repositories(query='stars:>=100', per_page=10, page=1)
 
         assert len(repos) == 1
@@ -92,7 +92,7 @@ class TestGitHubClientBasics:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         commits = client.get_commits('facebook/react', per_page=100)
 
         assert len(commits) == 1
@@ -117,7 +117,7 @@ class TestRateLimitHandling:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         client.search_repositories(query='test', per_page=10, page=1)
 
         # Should have recorded low rate limit
@@ -126,7 +126,7 @@ class TestRateLimitHandling:
 
     @respx.mock
     def test_raises_on_rate_limit_exceeded(self) -> None:
-        """Client raises RateLimitExceeded on 403 with rate limit message."""
+        """Client raises RateLimitExceededError on 403 with rate limit message."""
         reset_time = int(time.time()) + 60
         respx.get('https://api.github.com/search/repositories').mock(
             return_value=httpx.Response(
@@ -142,8 +142,8 @@ class TestRateLimitHandling:
             )
         )
 
-        client = GitHubClient(token='test-token')
-        with pytest.raises(RateLimitExceeded) as exc_info:
+        client = GitHubClient(token='test-token')  # noqa: S106
+        with pytest.raises(RateLimitExceededError) as exc_info:
             client.search_repositories(query='test', per_page=10, page=1)
 
         assert exc_info.value.reset_at is not None
@@ -199,7 +199,7 @@ class TestSearchPagination:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         client.search_repositories(query='stars:100..500', per_page=30, page=2)
 
         # Verify the request parameters
@@ -230,7 +230,7 @@ class TestCommitsFetching:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         since = datetime(2025, 1, 1, tzinfo=UTC)
         client.get_commits('owner/repo', since=since, per_page=100)
 
@@ -263,7 +263,7 @@ class TestCommitsFetching:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         commits = client.get_commits('owner/repo', per_page=100)
 
         # Both returned, caller filters merge commits
@@ -291,7 +291,7 @@ class TestClientConfiguration:
             )
         )
 
-        client = GitHubClient(token='test-token-123')
+        client = GitHubClient(token='test-token-123')  # noqa: S106
         client.search_repositories(query='test', per_page=10, page=1)
 
         request = route.calls.last.request
@@ -311,7 +311,7 @@ class TestClientConfiguration:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         client.search_repositories(query='test', per_page=10, page=1)
 
         request = route.calls.last.request
@@ -343,7 +343,7 @@ class TestRepoMetadataFetching:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         repo = client.get_repository('facebook/react')
 
         assert repo['full_name'] == 'facebook/react'
@@ -367,7 +367,7 @@ class TestErrorHandling:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         with pytest.raises(httpx.HTTPStatusError):
             client.get_repository('nonexistent/repo')
 
@@ -378,7 +378,7 @@ class TestErrorHandling:
             side_effect=httpx.ConnectError('Connection failed')
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         with pytest.raises(httpx.ConnectError):
             client.get_repository('owner/repo')
 
@@ -402,7 +402,7 @@ class TestRateLimitParsing:
             )
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         client.get_repository('owner/repo')
 
         assert client.rate_limit_remaining == 4567
@@ -415,7 +415,7 @@ class TestRateLimitParsing:
             return_value=httpx.Response(200, json={'id': 1})
         )
 
-        client = GitHubClient(token='test-token')
+        client = GitHubClient(token='test-token')  # noqa: S106
         # Should not raise
         client.get_repository('owner/repo')
 
@@ -437,9 +437,9 @@ class TestContextManager:
             )
         )
 
-        with GitHubClient(token='test-token') as client:
+        with GitHubClient(token='test-token') as client:  # noqa: S106
             client.get_repository('owner/repo')
             # Client should work inside context
 
         # Client closed after context
-        assert client._client.is_closed
+        assert client._client.is_closed  # noqa: SLF001

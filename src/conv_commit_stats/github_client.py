@@ -19,12 +19,12 @@ import httpx
 
 __all__ = (
     'GitHubClient',
-    'RateLimitExceeded',
+    'RateLimitExceededError',
     'calculate_backoff_with_jitter',
 )
 
 
-class RateLimitExceeded(Exception):
+class RateLimitExceededError(Exception):
     """Raised when GitHub API rate limit is exceeded."""
 
     def __init__(
@@ -33,6 +33,13 @@ class RateLimitExceeded(Exception):
         reset_at: datetime | None = None,
         remaining: int = 0,
     ) -> None:
+        """Initialize rate limit exception.
+
+        Args:
+            message: Error message
+            reset_at: When the rate limit resets
+            remaining: Number of requests remaining
+        """
         super().__init__(message)
         self.reset_at = reset_at
         self.remaining = remaining
@@ -57,7 +64,8 @@ def calculate_backoff_with_jitter(
     delay = base * (2 ** (attempt - 1))
 
     # Add random jitter (±25%)
-    jitter = delay * 0.25 * (2 * random.random() - 1)
+    # Using random.random() for jitter, not cryptography
+    jitter = delay * 0.25 * (2 * random.random() - 1)  # noqa: S311
     delay = delay + jitter
 
     # Cap at max_delay
@@ -144,7 +152,7 @@ class GitHubClient:
             try:
                 data = response.json()
                 if 'rate limit' in data.get('message', '').lower():
-                    raise RateLimitExceeded(
+                    raise RateLimitExceededError(
                         message=data.get('message', 'Rate limit exceeded'),
                         reset_at=self.rate_limit_reset_at,
                         remaining=self.rate_limit_remaining or 0,
@@ -172,7 +180,7 @@ class GitHubClient:
             The HTTP response
 
         Raises:
-            RateLimitExceeded: If rate limit is exceeded
+            RateLimitExceededError: If rate limit is exceeded
             httpx.HTTPStatusError: For other HTTP errors
         """
         response = self._client.request(method, url, params=params)
