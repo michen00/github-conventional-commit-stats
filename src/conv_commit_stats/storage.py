@@ -225,7 +225,7 @@ def _create_repo_record_schema() -> pap.DataFrameSchema:
 
     # Add all 11 commit type fields with non-negative constraint
     # Use CommitTypeCounts.model_fields to ensure completeness
-    for field_name in CommitTypeCounts.model_fields.keys():
+    for field_name in CommitTypeCounts.model_fields:
         schema_dict[field_name] = pap.Column(int, checks=pap.Check.ge(0))
 
     return pap.DataFrameSchema(schema_dict)
