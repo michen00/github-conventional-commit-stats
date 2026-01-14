@@ -1,0 +1,31 @@
+{
+  "run_id": "run_2026-01-12T04:00:00Z",
+  "generated_at": "2026-01-12T05:20:00Z",
+  "total_repos": 847,
+  "total_commits": 84700,
+  "counts": {
+    "feat": 25430,
+    "fix": 19876,
+    "docs": 11543,
+    "chore": 9821,
+    "refactor": 7654,
+    "test": 4987,
+    "ci": 2134,
+    "build": 1567,
+    "style": 876,
+    "perf": 543,
+    "revert": 269
+  },
+  "methodology": {
+    "min_stars": 3,
+    "max_commits_per_repo": 100,
+    "time_window_days": 365,
+    "excluded": [
+      "merge commits",
+      "bot authors",
+      "non-conventional messages",
+      "archived repositories",
+      "forks"
+    ]
+  }
+}

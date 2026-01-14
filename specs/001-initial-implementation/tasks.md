@@ -28,12 +28,12 @@
 
 **Purpose**: Project initialization and development environment configuration
 
-- [ ] T001 Verify project structure matches plan.md in src/conv_commit_stats/
-- [ ] T002 [P] Add dependencies to pyproject.toml: httpx, tinydb, typer[all], structlog, pydantic, pydantic-settings, polars, pandera
-- [ ] T003 [P] Add dev dependencies to pyproject.toml: pytest, pytest-cov, respx (for httpx mocking)
-- [ ] T004 [P] Create tests/conftest.py with shared fixtures (tmp_path for TinyDB, mock responses)
-- [ ] T005 [P] Create empty data/ directory with .gitkeep
-- [ ] T006 Run `uv lock` and `make develop` to verify installation
+- [x] T001 Verify project structure matches plan.md in src/conv_commit_stats/
+- [x] T002 [P] Add dependencies to pyproject.toml: httpx, tinydb, typer[all], structlog, pydantic, pydantic-settings, polars, pandera
+- [x] T003 [P] Add dev dependencies to pyproject.toml: pytest, pytest-cov, respx (for httpx mocking)
+- [x] T004 [P] Create tests/conftest.py with shared fixtures (tmp_path for TinyDB, mock responses)
+- [x] T005 [P] Create empty data/ directory with .gitkeep
+- [x] T006 Run `uv lock` and `make develop` to verify installation
 
 ---
 
@@ -45,28 +45,28 @@
 
 ### Parsing Module (Pure Functions)
 
-- [ ] T007 [P] Write tests for commit type regex parsing in tests/test_parsing.py
-- [ ] T008 [P] Write tests for bot detection patterns in tests/test_parsing.py
-- [ ] T009 Implement CommitType enum and CONVENTIONAL_COMMIT_PATTERN in src/conv_commit_stats/parsing.py
-- [ ] T010 Implement BOT_PATTERNS list and is_bot() function in src/conv_commit_stats/parsing.py
-- [ ] T011 Implement parse_commit_type() function in src/conv_commit_stats/parsing.py
+- [x] T007 [P] Write tests for commit type regex parsing in tests/test_parsing.py
+- [x] T008 [P] Write tests for bot detection patterns in tests/test_parsing.py
+- [x] T009 Implement CommitType enum and CONVENTIONAL_COMMIT_PATTERN in src/conv_commit_stats/parsing.py
+- [x] T010 Implement BOT_PATTERNS list and is_bot() function in src/conv_commit_stats/parsing.py
+- [x] T011 Implement parse_commit_type() function in src/conv_commit_stats/parsing.py
 
 ### Storage Module (TinyDB Wrapper)
 
-- [ ] T012 [P] Write tests for Run, RepoRecord, Progress models in tests/test_storage.py
-- [ ] T013 [P] Write tests for TinyDB CRUD operations in tests/test_storage.py
-- [ ] T014 Implement Pydantic models (Run, RepoRecord, Progress, RunStatus) in src/conv_commit_stats/storage.py
-- [ ] T015 Implement Storage class with TinyDB tables (runs, repos, progress) in src/conv_commit_stats/storage.py
-- [ ] T016 Implement atomic checkpoint save methods in src/conv_commit_stats/storage.py
+- [x] T012 [P] Write tests for Run, RepoRecord, Progress models in tests/test_storage.py
+- [x] T013 [P] Write tests for TinyDB CRUD operations in tests/test_storage.py
+- [x] T014 Implement Pydantic models (Run, RepoRecord, Progress, RunStatus) in src/conv_commit_stats/storage.py
+- [x] T015 Implement Storage class with TinyDB tables (runs, repos, progress) in src/conv_commit_stats/storage.py
+- [x] T016 Implement atomic checkpoint save methods in src/conv_commit_stats/storage.py
 
 ### GitHub Client Module (HTTP + Rate Limiting)
 
-- [ ] T017 [P] Write tests for rate limit handling with respx mocks in tests/test_github_client.py
-- [ ] T018 [P] Write tests for search API pagination in tests/test_github_client.py
-- [ ] T019 Implement GitHubClient class with httpx in src/conv_commit_stats/github_client.py
-- [ ] T020 Implement rate limit checking (X-RateLimit-Remaining < 10) in src/conv_commit_stats/github_client.py
-- [ ] T021 Implement exponential backoff with jitter in src/conv_commit_stats/github_client.py
-- [ ] T022 Implement star-range bucketing for search pagination in src/conv_commit_stats/github_client.py
+- [x] T017 [P] Write tests for rate limit handling with respx mocks in tests/test_github_client.py
+- [x] T018 [P] Write tests for search API pagination in tests/test_github_client.py
+- [x] T019 Implement GitHubClient class with httpx in src/conv_commit_stats/github_client.py
+- [x] T020 Implement rate limit checking (X-RateLimit-Remaining < 10) in src/conv_commit_stats/github_client.py
+- [x] T021 Implement exponential backoff with jitter in src/conv_commit_stats/github_client.py
+- [x] T022 Implement star-range bucketing for search pagination in src/conv_commit_stats/github_client.py
 
 **Checkpoint**: Foundation ready - run `make test` to verify all foundational tests pass
 
@@ -82,31 +82,31 @@
 
 ### Sample Data for Testing
 
-- [ ] T023 [US1] Create sample docs/data.json with realistic commit type distribution per data-model.md §4
+- [x] T023 [US1] Create sample docs/data.json with realistic commit type distribution per data-model.md §4
 
 ### Visualization Implementation
 
-- [ ] T024 [P] [US1] Create docs/index.html with HTML structure (chart container, legend, methodology section, theme toggle)
-- [ ] T025 [P] [US1] Add Plotly.js CDN and chart initialization script in docs/index.html
-- [ ] T026 [P] [US1] Implement horizontal bar chart with IBM Design Language colors per research.md §7
-- [ ] T027 [P] [US1] Implement hover tooltips with count and percentage in docs/index.html
-- [ ] T028 [P] [US1] Implement legend toggle with 250ms animation in docs/index.html
-- [ ] T029 [P] [US1] Implement theme toggle (system → dark → light → system) with localStorage persistence in docs/index.html
-- [ ] T030 [P] [US1] Add methodology section with sample size, date range, exclusions, timestamp in docs/index.html
-- [ ] T031 [P] [US1] Add repository attribution link in docs/index.html
+- [x] T024 [P] [US1] Create docs/index.html with HTML structure (chart container, legend, methodology section, theme toggle)
+- [x] T025 [P] [US1] Add Plotly.js CDN and chart initialization script in docs/index.html
+- [x] T026 [P] [US1] Implement horizontal bar chart with IBM Design Language colors per research.md §7
+- [x] T027 [P] [US1] Implement hover tooltips with count and percentage in docs/index.html
+- [x] T028 [P] [US1] Implement legend toggle with 250ms animation in docs/index.html
+- [x] T029 [P] [US1] Implement theme toggle (system → dark → light → system) with localStorage persistence in docs/index.html
+- [x] T030 [P] [US1] Add methodology section with sample size, date range, exclusions, timestamp in docs/index.html
+- [x] T031 [P] [US1] Add repository attribution link in docs/index.html
 
 ### Accessibility Implementation
 
-- [ ] T032 [P] [US1] Implement keyboard navigation (Tab through legend, Enter to toggle) in docs/index.html
-- [ ] T033 [P] [US1] Add ARIA labels to chart, bars, legend items, and theme toggle in docs/index.html
-- [ ] T034 [P] [US1] Implement aria-live region for screen reader announcements in docs/index.html
-- [ ] T035 [P] [US1] Verify WCAG AA contrast ratios for all text and interactive elements
-- [ ] T036 [P] [US1] Add focus indicators (2px solid outline) per research.md §7
+- [x] T032 [P] [US1] Implement keyboard navigation (Tab through legend, Enter to toggle) in docs/index.html
+- [x] T033 [P] [US1] Add ARIA labels to chart, bars, legend items, and theme toggle in docs/index.html
+- [x] T034 [P] [US1] Implement aria-live region for screen reader announcements in docs/index.html
+- [x] T035 [P] [US1] Verify WCAG AA contrast ratios for all text and interactive elements
+- [x] T036 [P] [US1] Add focus indicators (2px solid outline) per research.md §7
 
 ### Error Handling
 
-- [ ] T037 [P] [US1] Implement loading state with placeholder in docs/index.html
-- [ ] T038 [P] [US1] Implement error state when data.json fails to load in docs/index.html
+- [x] T037 [P] [US1] Implement loading state with placeholder in docs/index.html
+- [x] T038 [P] [US1] Implement error state when data.json fails to load in docs/index.html
 
 **Checkpoint**: US1 complete - open docs/index.html locally to verify visualization works with sample data
 
