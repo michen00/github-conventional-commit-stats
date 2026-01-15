@@ -233,18 +233,22 @@ Stores resumption state for interrupted collection runs.
 
 ## 4. ExportData
 
-The visualization-consumable format containing aggregated commit type counts.
+The visualization-consumable format containing aggregated commit type counts and breaking/scope counts.
 
 ### ExportData Attributes
 
-| Field           | Type               | Required | Description                           |
-| --------------- | ------------------ | -------- | ------------------------------------- |
-| `run_id`        | `str`              | ✓        | Source run identifier                 |
-| `generated_at`  | `datetime`         | ✓        | Export timestamp                      |
-| `total_repos`   | `int`              | ✓        | Number of repositories in aggregation |
-| `total_commits` | `int`              | ✓        | Total conventional commits counted    |
-| `counts`        | `CommitTypeCounts` | ✓        | Aggregated counts per type            |
-| `methodology`   | `Methodology`      | ✓        | Collection methodology metadata       |
+| Field                  | Type               | Required | Description                                        |
+| ---------------------- | ------------------ | -------- | -------------------------------------------------- |
+| `run_id`               | `str`              | ✓        | Source run identifier                              |
+| `generated_at`         | `datetime`         | ✓        | Export timestamp                                   |
+| `total_repos`          | `int`              | ✓        | Number of repositories in aggregation              |
+| `total_commits`        | `int`              | ✓        | Total conventional commits counted                 |
+| `counts`               | `CommitTypeCounts` | ✓        | Aggregated counts per type                         |
+| `breaking_scoped`      | `int`              | ✓        | Aggregated breaking commits with scope             |
+| `breaking_unscoped`    | `int`              | ✓        | Aggregated breaking commits without scope          |
+| `nonbreaking_scoped`   | `int`              | ✓        | Aggregated non-breaking commits with scope         |
+| `nonbreaking_unscoped` | `int`              | ✓        | Aggregated plain commits (neither breaking/scoped) |
+| `methodology`          | `Methodology`      | ✓        | Collection methodology metadata                    |
 
 ### CommitTypeCounts (nested)
 
@@ -292,6 +296,10 @@ The visualization-consumable format containing aggregated commit type counts.
     "perf": 300,
     "revert": 100
   },
+  "breaking_scoped": 5000,
+  "breaking_unscoped": 3000,
+  "nonbreaking_scoped": 25000,
+  "nonbreaking_unscoped": 51700,
   "methodology": {
     "min_stars": 3,
     "max_commits_per_repo": 100,
@@ -445,6 +453,10 @@ class ExportData(BaseModel):
     total_repos: NonNegativeInt
     total_commits: NonNegativeInt
     counts: CommitTypeCounts
+    breaking_scoped: NonNegativeInt = 0
+    breaking_unscoped: NonNegativeInt = 0
+    nonbreaking_scoped: NonNegativeInt = 0
+    nonbreaking_unscoped: NonNegativeInt = 0
     methodology: Methodology
 ```
 

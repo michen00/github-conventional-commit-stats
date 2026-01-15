@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Conventional Commit Census: A self-updating GitHub Pages site that visualizes the frequency of conventional commit types across popular public repositories"
 
+## Clarifications
+
+### Session 2026-01-12
+
+- Q: Should ExportData include aggregated breaking/scope counts? → A: Yes, include aggregated breaking/scope counts in ExportData (four fields: breaking_scoped, breaking_unscoped, nonbreaking_scoped, nonbreaking_unscoped)
+- Q: How should visualization display breaking/scope data? → A: Include breaking/scope visualizations as optional secondary charts/sections (primary focus remains on commit types)
+- Q: What happens when validation fails in CI workflow? → A: CI workflow fails deployment step and prevents committing invalid data (with clear error messages)
+- Q: When should system proactively sleep before hitting rate limit? → A: Sleep when remaining quota < 20% of hourly limit (e.g., <1000 for PAT, <200 for GITHUB_TOKEN), with minimum buffer of 100 requests
+- Q: How should system handle multi-line commit messages? → A: Parse only the first line (subject line) of commit messages; ignore body, footers, and multi-line content
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - View Commit Type Distribution (Priority: P1)
@@ -113,6 +123,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-002**: System MUST analyze up to 100 conventional commits per repository from the last year
 - **FR-003**: System MUST skip merge commits, empty commits, and commits from bot authors when counting
 - **FR-004**: System MUST recognize exactly 11 conventional commit types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
+- **FR-039**: System MUST parse only the first line (subject line) of commit messages when determining conventional commit type; body, footers, and multi-line content MUST be ignored
 - **FR-005**: System MUST detect bot authors using pattern matching against known bot name patterns
 - **FR-006**: System MUST save progress after each completed repository to enable resumability
 - **FR-007**: System MUST support graceful interruption (SIGINT/SIGTERM) without losing progress
@@ -126,6 +137,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-008**: System MUST respect GitHub API rate limits by checking remaining quota before requests
 - **FR-009**: System MUST implement exponential backoff with jitter for transient failures
 - **FR-010**: System MUST support both PAT (5000 requests/hour) and GITHUB_TOKEN (1000 requests/hour) rate limits
+- **FR-038**: System MUST proactively sleep when remaining quota drops below 20% of hourly limit (e.g., <1000 requests for PAT, <200 for GITHUB_TOKEN), with a minimum buffer of 100 requests, to avoid hitting the limit
 
 #### Data Storage
 
@@ -136,18 +148,19 @@ The system automatically runs the collection, export, and deployment pipeline mo
 #### CLI Interface
 
 - **FR-014**: System MUST provide a `collect` command with options for max repos, minimum stars, and resume
-- **FR-015**: System MUST provide an `export` command that produces visualization-ready JSON
+- **FR-015**: System MUST provide an `export` command that produces visualization-ready JSON with aggregated commit type counts and breaking/scope counts
 - **FR-016**: System MUST provide a `validate` command to verify data integrity
 - **FR-017**: System MUST provide a `status` command to show current progress and statistics
 - **FR-018**: System MUST provide a `prune` command to clean up old runs
 
 #### Visualization
 
-- **FR-019**: Visualization MUST display a horizontal bar chart of commit type frequencies
+- **FR-019**: Visualization MUST display a horizontal bar chart of commit type frequencies (primary visualization)
 - **FR-020**: Visualization MUST support interactive legend toggling with animated transitions
 - **FR-021**: Visualization MUST display hover tooltips with exact counts and percentages
 - **FR-022**: Visualization MUST respect system color scheme preference and support manual theme toggle
 - **FR-023**: Visualization MUST include a methodology section explaining data collection approach
+- **FR-037**: Visualization MAY include optional secondary charts/sections for breaking/scope data (2×2 matrix, stacked bars, or percentages) without detracting from the primary commit type visualization
 
 #### Accessibility
 
@@ -160,7 +173,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 - **FR-028**: CI workflow MUST run collection on a monthly schedule (cron: `0 4 1 * *` - 4 AM UTC on the 1st of each month)
 - **FR-029**: CI workflow MUST automatically commit updated data and trigger deployment
-- **FR-030**: CI workflow MUST validate data integrity and auto-revert on validation failure
+- **FR-030**: CI workflow MUST validate data integrity before committing; if validation fails, the workflow MUST fail the deployment step, prevent committing invalid data, and output clear error messages
 - **FR-031**: CI workflow MUST use conventional commit format for automated commits: `chore(data): update conventional commit statistics`
 - **FR-032**: CI workflow MUST support manual triggering via `workflow_dispatch` for ad-hoc updates
 
@@ -172,7 +185,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 - **Progress Checkpoint**: Stores resumption state including the current run ID, search cursor position (star range and page), and the last fully-processed repository name.
 
-- **Export Data**: The visualization-consumable format containing aggregated commit type counts, total repositories, total commits, collection timestamp, and methodology metadata.
+- **Export Data**: The visualization-consumable format containing aggregated commit type counts, aggregated breaking/scope counts (breaking_scoped, breaking_unscoped, nonbreaking_scoped, nonbreaking_unscoped), total repositories, total commits, collection timestamp, and methodology metadata.
 
 ## Success Criteria _(mandatory)_
 
