@@ -139,9 +139,15 @@ repos:
       - id: mypy
         args: ["--config-file=pyproject.toml", "--install-types", "--non-interactive"]
         additional_dependencies:
+          - httpx
           - nox[uv]
+          - pandera[polars]
+          - polars
           - pydantic[mypy]
           - pytest
+          - respx
+          - structlog
+          - tinydb
           - types-pyyaml
           - typer
         stages: ["pre-push"]
