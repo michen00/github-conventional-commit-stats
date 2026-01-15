@@ -383,6 +383,7 @@ class TestCommitProcessing:
                 repo_data=repo_data,
             )
 
+            assert record is not None
             assert record.feat == 1
             assert record.fix == 1
             assert record.commits_analyzed == 2  # Merge commit excluded
@@ -421,6 +422,7 @@ class TestCommitProcessing:
             )
 
             # Should have 2 commits (feat + fix), merge commit excluded
+            assert record is not None
             assert record.commits_analyzed == 2
 
     def test_excludes_bot_commits(self, tmp_db_path: Path) -> None:
@@ -477,6 +479,7 @@ class TestCommitProcessing:
             )
 
             # Should have 1 commit (fix), bot commit excluded
+            assert record is not None
             assert record.commits_analyzed == 1
             assert record.fix == 1
 
@@ -529,6 +532,7 @@ class TestCommitProcessing:
             )
 
             # Should have max 100 commits
+            assert record is not None
             assert record.commits_analyzed <= 100
 
 
@@ -642,6 +646,7 @@ class TestSignalHandling:
 
             # Verify run is still in running state (resumable)
             run = storage.get_run(run_id)
+            assert run is not None
             assert run.status == RunStatus.RUNNING
 
             collector.complete_collection(run_id)
@@ -668,6 +673,7 @@ class TestSignalHandling:
 
             # Verify run is still in running state (resumable)
             run = storage.get_run(run_id)
+            assert run is not None
             assert run.status == RunStatus.RUNNING
 
             collector.complete_collection(run_id)
