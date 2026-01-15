@@ -34,7 +34,13 @@ dev = [
     "pylint>=4.0.4",
     "ruff>=0.14.11",
 ]
-test = ["coverage>=7.9.2", "pytest>=8.4.0", "pytest-cov>=6.2.1", "pytest-xdist>=3.8.0", "respx>=0.22.0"]
+test = [
+    "coverage>=7.9.2",
+    "pytest>=8.4.0",
+    "pytest-cov>=6.2.1",
+    "pytest-xdist>=3.8.0",
+    "respx>=0.22.0",
+]
 
 [tool.uv]
 default-groups = []
@@ -59,11 +65,6 @@ strict = true
 warn_return_any = true
 warn_unreachable = true
 
-[[tool.uv.index]]
-name        = "testpypi"
-url         = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
-explicit    = true
 
 [tool.pytest.ini_options]
 addopts = [
