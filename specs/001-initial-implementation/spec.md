@@ -116,6 +116,10 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-005**: System MUST detect bot authors using pattern matching against known bot name patterns
 - **FR-006**: System MUST save progress after each completed repository to enable resumability
 - **FR-007**: System MUST support graceful interruption (SIGINT/SIGTERM) without losing progress
+- **FR-033**: System MUST track breaking change commits (those with `!` indicator) separately from non-breaking commits
+- **FR-034**: System MUST track scoped commits (those with `(scope)`) separately from unscoped commits
+- **FR-035**: System MUST track all four combinations: breaking+scoped, breaking+unscoped, nonbreaking+scoped, nonbreaking+unscoped
+- **FR-036**: System MUST store breaking/scope counts per repository in `RepoRecord`
 
 #### Rate Limiting
 
@@ -164,7 +168,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 - **Run**: Represents a single collection execution with status, timestamps, and aggregate statistics. Each run has a unique identifier and tracks how many repositories were processed.
 
-- **Repository Record**: Captures data about a single analyzed repository including its name, star count, primary language, license, and counts for each of the 11 conventional commit types from that run.
+- **Repository Record**: Captures data about a single analyzed repository including its name, star count, primary language, license, and counts for each of the 11 conventional commit types from that run. Also tracks breaking changes and scoped commits in four combination fields (breaking+scoped, breaking+unscoped, nonbreaking+scoped, nonbreaking+unscoped) to enable cross-tabulation visualizations.
 
 - **Progress Checkpoint**: Stores resumption state including the current run ID, search cursor position (star range and page), and the last fully-processed repository name.
 
@@ -184,6 +188,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **SC-008**: Monthly automated workflow completes successfully with updated data deployed
 - **SC-009**: 100% of visualized data includes clear methodology disclosure visible on the same page
 - **SC-010**: Export produces valid JSON that the visualization can render without errors
+- **SC-011**: Breaking and scope counts sum correctly to `commits_analyzed` for each repository
 
 ## Assumptions
 

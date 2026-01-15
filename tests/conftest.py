@@ -12,6 +12,8 @@ from typing import Any
 
 import pytest
 
+from conv_commit_stats.storage import Storage
+
 
 @pytest.fixture
 def tmp_db_path(tmp_path: Path) -> Path:
@@ -26,16 +28,13 @@ def tmp_db_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def storage(tmp_path: Path) -> Generator['Storage', None, None]:  # noqa: F821
+def storage(tmp_path: Path) -> Generator['Storage', None, None]:
     """Provide a Storage instance that auto-closes after test.
 
     Usage:
         def test_something(storage: Storage):
             storage.save_run(run)
     """
-    # Import here to avoid circular imports at module level
-    from conv_commit_stats.storage import Storage
-
     with Storage(tmp_path) as store:
         yield store
 

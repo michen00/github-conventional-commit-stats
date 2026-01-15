@@ -104,35 +104,41 @@ Captures data about a single analyzed repository including commit type counts.
 
 ### RepoRecord Attributes
 
-| Field              | Type          | Required | Description                             |
-| ------------------ | ------------- | -------- | --------------------------------------- |
-| `run_id`           | `str`         | ✓        | Foreign key to Run                      |
-| `repo`             | `str`         | ✓        | Full name: `owner/repo`                 |
-| `default_branch`   | `str`         | ✓        | Branch analyzed (e.g., `main`)          |
-| `head_commit`      | `str`         | ✓        | SHA of latest commit at collection time |
-| `stars`            | `int`         | ✓        | Star count at collection time           |
-| `language`         | `str \| None` |          | Primary language (may be null)          |
-| `created_at`       | `datetime`    | ✓        | Repository creation date                |
-| `license`          | `str \| None` |          | SPDX license identifier                 |
-| `timestamp`        | `datetime`    | ✓        | When this record was created            |
-| `commits_analyzed` | `int`         | ✓        | Number of conventional commits found    |
-| `build`            | `int`         | ✓        | Count of `build:` commits               |
-| `chore`            | `int`         | ✓        | Count of `chore:` commits               |
-| `ci`               | `int`         | ✓        | Count of `ci:` commits                  |
-| `docs`             | `int`         | ✓        | Count of `docs:` commits                |
-| `feat`             | `int`         | ✓        | Count of `feat:` commits                |
-| `fix`              | `int`         | ✓        | Count of `fix:` commits                 |
-| `perf`             | `int`         | ✓        | Count of `perf:` commits                |
-| `refactor`         | `int`         | ✓        | Count of `refactor:` commits            |
-| `revert`           | `int`         | ✓        | Count of `revert:` commits              |
-| `style`            | `int`         | ✓        | Count of `style:` commits               |
-| `test`             | `int`         | ✓        | Count of `test:` commits                |
+| Field                  | Type          | Required | Description                             |
+| ---------------------- | ------------- | -------- | --------------------------------------- |
+| `run_id`               | `str`         | ✓        | Foreign key to Run                      |
+| `repo`                 | `str`         | ✓        | Full name: `owner/repo`                 |
+| `default_branch`       | `str`         | ✓        | Branch analyzed (e.g., `main`)          |
+| `head_commit`          | `str`         | ✓        | SHA of latest commit at collection time |
+| `stars`                | `int`         | ✓        | Star count at collection time           |
+| `language`             | `str \| None` |          | Primary language (may be null)          |
+| `created_at`           | `datetime`    | ✓        | Repository creation date                |
+| `license`              | `str \| None` |          | SPDX license identifier                 |
+| `timestamp`            | `datetime`    | ✓        | When this record was created            |
+| `commits_analyzed`     | `int`         | ✓        | Number of conventional commits found    |
+| `build`                | `int`         | ✓        | Count of `build:` commits               |
+| `chore`                | `int`         | ✓        | Count of `chore:` commits               |
+| `ci`                   | `int`         | ✓        | Count of `ci:` commits                  |
+| `docs`                 | `int`         | ✓        | Count of `docs:` commits                |
+| `feat`                 | `int`         | ✓        | Count of `feat:` commits                |
+| `fix`                  | `int`         | ✓        | Count of `fix:` commits                 |
+| `perf`                 | `int`         | ✓        | Count of `perf:` commits                |
+| `refactor`             | `int`         | ✓        | Count of `refactor:` commits            |
+| `revert`               | `int`         | ✓        | Count of `revert:` commits              |
+| `style`                | `int`         | ✓        | Count of `style:` commits               |
+| `test`                 | `int`         | ✓        | Count of `test:` commits                |
+| `breaking_scoped`      | `int`         | ✓        | Count of breaking commits with scope    |
+| `breaking_unscoped`    | `int`         | ✓        | Count of breaking commits without scope |
+| `nonbreaking_scoped`   | `int`         | ✓        | Count of non-breaking commits with scop |
+| `nonbreaking_unscoped` | `int`         | ✓        | Plain commits (neither breaking/scoped) |
 
 ### RepoRecord Validation Rules
 
 - `repo` MUST be unique within a run (composite key: `run_id` + `repo`)
 - All commit type counts MUST be ≥ 0
 - `commits_analyzed` MUST equal sum of all type counts
+- All breaking/scope counts MUST be ≥ 0
+- The four breaking/scope fields MUST sum to `commits_analyzed`
 - `stars` MUST be ≥ 3 (minimum filter threshold)
 
 ### TinyDB Schema (repos.json)
@@ -161,7 +167,11 @@ Captures data about a single analyzed repository including commit type counts.
       "refactor": 7,
       "revert": 1,
       "style": 2,
-      "test": 4
+      "test": 4,
+      "breaking_scoped": 5,
+      "breaking_unscoped": 3,
+      "nonbreaking_scoped": 25,
+      "nonbreaking_unscoped": 67
     }
   }
 }
@@ -391,6 +401,10 @@ class RepoRecord(BaseModel):
     revert: NonNegativeInt = 0
     style: NonNegativeInt = 0
     test: NonNegativeInt = 0
+    breaking_scoped: NonNegativeInt = 0
+    breaking_unscoped: NonNegativeInt = 0
+    nonbreaking_scoped: NonNegativeInt = 0
+    nonbreaking_unscoped: NonNegativeInt = 0
 
 
 class SearchCursor(BaseModel):
@@ -457,12 +471,12 @@ class ExportData(BaseModel):
 
 ### Missing vs Empty Storage Files
 
-| Scenario | Behavior |
-| -------- | -------- |
-| File does not exist | Create new empty TinyDB table; proceed normally |
-| File exists but is empty (0 bytes) | Treat as corrupted; log warning and recreate |
-| File exists with valid JSON `{}` | Valid empty table; proceed normally |
-| File exists with invalid JSON | Treat as corrupted (see below) |
+| Scenario                           | Behavior                                        |
+| ---------------------------------- | ----------------------------------------------- |
+| File does not exist                | Create new empty TinyDB table; proceed normally |
+| File exists but is empty (0 bytes) | Treat as corrupted; log warning and recreate    |
+| File exists with valid JSON `{}`   | Valid empty table; proceed normally             |
+| File exists with invalid JSON      | Treat as corrupted (see below)                  |
 
 ### Corrupted Progress File Handling
 
@@ -484,3 +498,21 @@ When `progress.json` is corrupted (invalid JSON, missing required keys, or fails
 3. If breaking changes are necessary: document in CHANGELOG and advise users to `prune --keep 0` before upgrading
 
 **Future Consideration**: If schema migration becomes necessary, implement via a `migrate` CLI command that transforms data in-place with backup.
+
+---
+
+## 9. Breaking/Scope Data Partition
+
+The four breaking/scope fields (`breaking_scoped`, `breaking_unscoped`, `nonbreaking_scoped`, `nonbreaking_unscoped`) form a **complete partition** of all conventional commits:
+
+- All four fields sum to `commits_analyzed`
+- Every commit falls into exactly one of the four categories
+- This enables 2×2 matrix visualizations and cross-tabulation analysis
+
+**Visualization Possibilities**:
+
+- **2×2 Matrix**: Breaking vs Non-breaking × Scoped vs Unscoped
+- **Stacked Bar Charts**: Show distribution of all four categories
+- **Percentages**: "X% of breaking changes use scopes"
+- **Trends**: How scope usage changes over time
+- **Comparisons**: Compare scope adoption between breaking and non-breaking commits

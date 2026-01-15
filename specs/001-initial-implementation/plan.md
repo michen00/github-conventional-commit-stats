@@ -18,6 +18,7 @@ Technical approach follows TDD methodology with pure functions for parsing, isol
 
 **Language/Version**: Python ≥3.12 (modern typing, StrEnum, tomllib)
 **Primary Dependencies**: httpx (HTTP client), TinyDB (JSON storage), Typer (CLI), structlog (logging), Pydantic (validation), Polars + Pandera (DataFrame operations)
+**Parsing Functions**: The parsing module includes `parse_breaking()` and `parse_has_scope()` functions to extract breaking change indicators and scopes from commit messages
 **Storage**: TinyDB (JSON files committed to git): `data/runs.json`, `data/repos.json`, `data/progress.json`
 **Testing**: pytest + pytest-cov (≥80% coverage required)
 **Target Platform**: GitHub Actions (Ubuntu), GitHub Pages (static hosting)
@@ -109,7 +110,7 @@ docs/
 tests/test_parsing.py       → parsing.py        # No deps, pure functions
 tests/test_storage.py       → storage.py        # No deps, TinyDB wrapper
 tests/test_github_client.py → github_client.py  # No deps, HTTP + rate limiting
-tests/test_collector.py     → collector.py      # Depends: parsing, storage, github_client
+tests/test_collector.py     → collector.py      # Depends: parsing (including parse_breaking, parse_has_scope), storage, github_client
 tests/test_cli_smoke.py     → cli.py            # Depends: collector, storage
                             → __main__.py       # Just imports cli
 ```

@@ -310,18 +310,37 @@ Week 3: US3 + US5 + Polish
 
 ---
 
+## Phase 8: Breaking/Scope Tracking (Enhancement)
+
+**Purpose**: Add tracking for breaking changes and scoped commits to enable cross-tabulation visualizations
+
+- [ ] T081 [P] Write tests for `parse_breaking()` function in tests/test_parsing.py
+- [ ] T082 [P] Write tests for `parse_has_scope()` function in tests/test_parsing.py
+- [ ] T083 Implement `parse_breaking()` function in src/conv_commit_stats/parsing.py (depends: T081)
+- [ ] T084 Implement `parse_has_scope()` function in src/conv_commit_stats/parsing.py (depends: T082)
+- [ ] T085 [P] Write tests for `RepoRecord` with breaking/scope fields in tests/test_storage.py
+- [ ] T086 Add four breaking/scope fields to `RepoRecord` in src/conv_commit_stats/storage.py (depends: T085)
+- [ ] T087 Update Pandera schema to include breaking/scope fields in src/conv_commit_stats/storage.py (depends: T086)
+- [ ] T088 [P] Write tests for collector tracking all four combinations in tests/test_collector.py
+- [ ] T089 Update `collector.py` to track all four combinations during commit processing (depends: T083, T084, T086, T088)
+- [ ] T090 Update `aggregate_run_data()` to sum breaking/scope fields in src/conv_commit_stats/cli.py (depends: T086)
+- [ ] T091 Verify all tests pass and counts sum correctly (depends: T089, T090)
+
+---
+
 ## Summary
 
-| Phase                 | Tasks  | Parallelizable |
-| --------------------- | ------ | -------------- |
-| Phase 1: Setup        | 6      | 4              |
-| Phase 2: Foundational | 16     | 6              |
-| Phase 3: US1 (P1)     | 16     | 15             |
-| Phase 4: US2 (P2)     | 22     | 8              |
-| Phase 5: US3 (P3)     | 6      | 2              |
-| Phase 6: US5 (P5)     | 7      | 0              |
-| Phase 7: Polish       | 7      | 4              |
-| **Total**             | **80** | **39**         |
+| Phase                   | Tasks  | Parallelizable |
+| ----------------------- | ------ | -------------- |
+| Phase 1: Setup          | 6      | 4              |
+| Phase 2: Foundational   | 16     | 6              |
+| Phase 3: US1 (P1)       | 16     | 15             |
+| Phase 4: US2 (P2)       | 22     | 8              |
+| Phase 5: US3 (P3)       | 6      | 2              |
+| Phase 6: US5 (P5)       | 7      | 0              |
+| Phase 7: Polish         | 7      | 4              |
+| Phase 8: Breaking/Scope | 11     | 6              |
+| **Total**               | **91** | **45**         |
 
 ---
 
