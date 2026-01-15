@@ -64,7 +64,7 @@
 - [x] T017 [P] Write tests for rate limit handling with respx mocks in tests/test_github_client.py
 - [x] T018 [P] Write tests for search API pagination in tests/test_github_client.py
 - [x] T019 Implement GitHubClient class with httpx in src/conv_commit_stats/github_client.py
-- [x] T020 Implement rate limit checking (X-RateLimit-Remaining < 10) in src/conv_commit_stats/github_client.py
+- [x] T020 Implement rate limit checking: proactively sleep when remaining quota < 20% of hourly limit (<1000 for PAT, <200 for GITHUB_TOKEN) with minimum buffer of 100 requests per FR-038 in src/conv_commit_stats/github_client.py
 - [x] T021 Implement exponential backoff with jitter in src/conv_commit_stats/github_client.py
 - [x] T022 Implement star-range bucketing for search pagination in src/conv_commit_stats/github_client.py
 
@@ -78,7 +78,7 @@
 
 **Independent Test**: Load docs/index.html with sample data.json and verify chart displays with all 11 commit types, tooltips work, and accessibility features function
 
-**Note**: US4 (Methodology) is incorporated here as the methodology section is on the same page
+**Note**: US4 (Understand Data Methodology, Priority P4) requirements are implemented here as the methodology section is on the same visualization page. This includes FR-023 (methodology section) and US4 acceptance scenarios (sample size, date range, exclusions, timestamp, attribution link) via tasks T030-T031.
 
 ### Sample Data for Testing
 
@@ -170,7 +170,7 @@
 ### Export Implementation
 
 - [x] T063 [US3] Implement ExportData, CommitTypeCounts, Methodology Pydantic models in src/conv_commit_stats/storage.py
-- [x] T064 [US3] Implement aggregate_run_data() using Polars in src/conv_commit_stats/cli.py
+- [x] T064 [US3] Implement aggregate_run_data() using Polars to aggregate commit type counts AND breaking/scope counts (breaking_scoped, breaking_unscoped, nonbreaking_scoped, nonbreaking_unscoped) per FR-015 in src/conv_commit_stats/cli.py
 - [x] T065 [US3] Implement export command with --run, --output options in src/conv_commit_stats/cli.py
 - [x] T066 [US3] Implement Pandera schema validation before export in src/conv_commit_stats/cli.py
 
@@ -310,9 +310,9 @@ Week 3: US3 + US5 + Polish
 
 ---
 
-## Phase 8: Breaking/Scope Tracking (Enhancement)
+## Phase 8: Breaking/Scope Tracking (Required - FR-033 through FR-036)
 
-**Purpose**: Add tracking for breaking changes and scoped commits to enable cross-tabulation visualizations
+**Purpose**: Implement breaking change and scope tracking requirements (FR-033-FR-036) to enable cross-tabulation visualizations. Note: These are MUST requirements, not optional enhancements.
 
 - [ ] T081 [P] Write tests for `parse_breaking()` function in tests/test_parsing.py
 - [ ] T082 [P] Write tests for `parse_has_scope()` function in tests/test_parsing.py

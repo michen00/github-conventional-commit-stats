@@ -156,7 +156,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 #### Visualization
 
 - **FR-019**: Visualization MUST display a horizontal bar chart of commit type frequencies (primary visualization)
-- **FR-020**: Visualization MUST support interactive legend toggling with animated transitions
+- **FR-020**: Visualization MUST support interactive legend toggling with animated transitions (250ms duration)
 - **FR-021**: Visualization MUST display hover tooltips with exact counts and percentages
 - **FR-022**: Visualization MUST respect system color scheme preference and support manual theme toggle
 - **FR-023**: Visualization MUST include a methodology section explaining data collection approach
