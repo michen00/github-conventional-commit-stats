@@ -10,7 +10,7 @@ This module coordinates:
 import signal
 import sys
 from datetime import UTC, datetime, timedelta
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import structlog
 
@@ -178,12 +178,16 @@ class Collector:
 
         if search_cursor_value is not None:
             # Handle both SearchCursor object and dict (from JSON)
-            if isinstance(search_cursor_value, dict):
-                search_cursor = SearchCursor(**search_cursor_value)
-            elif isinstance(search_cursor_value, SearchCursor):
+            if isinstance(search_cursor_value, SearchCursor):
                 search_cursor = search_cursor_value
             else:
-                search_cursor = None
+                # When deserialized from JSON, SearchCursor becomes a dict
+                # Type narrowing: if not (None or SearchCursor), it's a dict from JSON
+                search_cursor_dict = cast('dict[str, Any]', search_cursor_value)
+                try:
+                    search_cursor = SearchCursor(**search_cursor_dict)
+                except (TypeError, ValueError):
+                    search_cursor = None
 
             if search_cursor:
                 # Find the star range index

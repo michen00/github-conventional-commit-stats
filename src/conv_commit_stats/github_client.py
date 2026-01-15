@@ -69,7 +69,7 @@ def calculate_backoff_with_jitter(
     delay = delay + jitter
 
     # Cap at max_delay
-    return min(delay, max_delay)
+    return float(min(delay, max_delay))
 
 
 class GitHubClient:
@@ -219,8 +219,9 @@ class GitHubClient:
             },
         )
 
-        data = response.json()
-        return data.get('items', [])
+        data: dict[str, Any] = response.json()
+        items: list[dict[str, Any]] = data.get('items', [])
+        return items
 
     def get_repository(self, repo: str) -> dict[str, Any]:
         """Get repository metadata.
@@ -235,7 +236,8 @@ class GitHubClient:
             httpx.HTTPStatusError: If repository not found
         """
         response = self._request('GET', f'/repos/{repo}')
-        return response.json()
+        result: dict[str, Any] = response.json()
+        return result
 
     def get_commits(
         self,
@@ -264,7 +266,8 @@ class GitHubClient:
             params['since'] = since.isoformat()
 
         response = self._request('GET', f'/repos/{repo}/commits', params=params)
-        return response.json()
+        result: list[dict[str, Any]] = response.json()
+        return result
 
     def should_sleep_for_rate_limit(self) -> bool:
         """Check if we should sleep due to low rate limit.

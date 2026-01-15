@@ -435,11 +435,19 @@ class Storage:
         value = progress.value
 
         # If value is a dict (from JSON), try to deserialize as SearchCursor
-        if isinstance(value, dict) and key == 'search_cursor':
-            try:
-                return SearchCursor(**value)
-            except (TypeError, ValueError):
-                return value
+        # Note: When deserialized from JSON, SearchCursor becomes a dict
+        # We need to check the raw dict from JSON, not the Pydantic-validated value
+        if key == 'search_cursor':
+            raw_value = result[0].get('value')
+            # Check if it's a dict in the raw JSON (before Pydantic validation)
+            if isinstance(raw_value, dict):
+                try:
+                    return SearchCursor(**raw_value)
+                except (TypeError, ValueError):
+                    # If deserialization fails, return the validated value
+                    return value
+            # Already a SearchCursor object or str
+            return value
 
         return value
 

@@ -7,6 +7,7 @@ conventional commit statistics.
 import json
 import os
 from pathlib import Path
+from typing import Any, cast
 
 import pandera.errors
 import polars as pl
@@ -389,14 +390,23 @@ def status(
                     console.print(f'  Last repo: {last_repo}')
 
                 search_cursor = storage.get_progress('search_cursor')
-                if search_cursor:
-                    if isinstance(search_cursor, dict):
-                        cursor = SearchCursor(**search_cursor)
-                    else:
-                        cursor = search_cursor
+                if search_cursor is None:
+                    console.print('  Search cursor: None')
+                elif isinstance(search_cursor, SearchCursor):
                     console.print(
-                        f'  Search cursor: {cursor.stars_range}, page {cursor.page}'
+                        f'  Search cursor: {search_cursor.stars_range}, '
+                        f'page {search_cursor.page}'
                     )
+                else:
+                    # When deserialized from JSON, SearchCursor becomes a dict
+                    cursor_dict = cast('dict[str, Any]', search_cursor)
+                    try:
+                        cursor = SearchCursor(**cursor_dict)
+                        console.print(
+                            f'  Search cursor: {cursor.stars_range}, page {cursor.page}'
+                        )
+                    except (TypeError, ValueError):
+                        console.print(f'  Search cursor: {search_cursor}')
 
             # Get most recent completed run
             latest_completed = storage.get_latest_completed_run()
