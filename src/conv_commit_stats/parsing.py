@@ -24,7 +24,9 @@ __all__ = (
     'CommitType',
     'is_bot',
     'is_conventional_commit',
+    'parse_breaking',
     'parse_commit_type',
+    'parse_has_scope',
 )
 
 
@@ -153,3 +155,78 @@ def is_bot(author: str) -> bool:
         return False
 
     return any(pattern.search(author) for pattern in BOT_PATTERNS)
+
+
+def parse_breaking(message: str) -> bool:
+    """Check if a commit message indicates a breaking change.
+
+    A breaking change is indicated by the presence of `!` before the colon
+    in the conventional commit format.
+
+    Only the first line of the message is checked, per FR-039.
+
+    Args:
+        message: The commit message to check
+
+    Returns:
+        True if the commit has a breaking change indicator (!), False otherwise
+    """
+    if not message or not message.strip():
+        return False
+
+    # Only check the first line for multiline messages
+    first_line = message.split('\n')[0]
+
+    # Check if ! appears before the colon
+    # Pattern: type(scope)!: description
+    # The ! must come after the type (and optional scope) but before the colon
+    match = CONVENTIONAL_COMMIT_PATTERN.match(first_line)
+    if match is None:
+        return False
+
+    # Extract the part before the colon
+    colon_index = first_line.find(':')
+    if colon_index == -1:
+        return False
+
+    # Check if ! appears in the part before the colon
+    before_colon = first_line[:colon_index]
+    return '!' in before_colon
+
+
+def parse_has_scope(message: str) -> bool:
+    """Check if a commit message has a scope in parentheses.
+
+    A scope is indicated by the presence of `(scope)` after the type
+    and before the colon in the conventional commit format.
+
+    Only the first line of the message is checked, per FR-039.
+
+    Args:
+        message: The commit message to check
+
+    Returns:
+        True if the commit has a scope, False otherwise
+    """
+    if not message or not message.strip():
+        return False
+
+    # Only check the first line for multiline messages
+    first_line = message.split('\n')[0]
+
+    # Check if scope pattern exists
+    # Pattern: type(scope)!: description or type(scope): description
+    match = CONVENTIONAL_COMMIT_PATTERN.match(first_line)
+    if match is None:
+        return False
+
+    # Extract the part before the colon
+    colon_index = first_line.find(':')
+    if colon_index == -1:
+        return False
+
+    # Check if parentheses with content exist before the colon
+    before_colon = first_line[:colon_index]
+    # Look for pattern: type(scope) or type(scope)!
+    scope_pattern = re.compile(r'^[a-z]+\([^)]+\)')
+    return scope_pattern.match(before_colon) is not None

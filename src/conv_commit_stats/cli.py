@@ -101,14 +101,17 @@ def collect(
         raise typer.Exit(1) from None
 
 
-def aggregate_run_data(repos: list[RepoRecord]) -> tuple[CommitTypeCounts, int]:
-    """Aggregate repository commit type counts using Polars.
+def aggregate_run_data(
+    repos: list[RepoRecord],
+) -> tuple[CommitTypeCounts, int, int, int, int, int]:
+    """Aggregate repository commit type counts and breaking/scope counts using Polars.
 
     Args:
         repos: List of RepoRecord instances to aggregate
 
     Returns:
-        Tuple of (CommitTypeCounts, total_commits)
+        Tuple of (CommitTypeCounts, total_commits, breaking_scoped, breaking_unscoped,
+        nonbreaking_scoped, nonbreaking_unscoped)
 
     Raises:
         pandera.errors.SchemaError: If DataFrame doesn't match RepoRecordSchema
@@ -116,7 +119,7 @@ def aggregate_run_data(repos: list[RepoRecord]) -> tuple[CommitTypeCounts, int]:
     if not repos:
         # Return zeros for empty list
         counts = CommitTypeCounts()
-        return counts, 0
+        return counts, 0, 0, 0, 0, 0
 
     # Convert to DataFrame
     # model_dump(mode='json') serializes datetime to ISO 8601 strings
@@ -143,20 +146,43 @@ def aggregate_run_data(repos: list[RepoRecord]) -> tuple[CommitTypeCounts, int]:
     # This ensures we aggregate all 11 types automatically
     commit_type_cols = list(CommitTypeCounts.model_fields.keys())
 
+    # Breaking/scope columns to aggregate
+    breaking_scope_cols = [
+        'breaking_scoped',
+        'breaking_unscoped',
+        'nonbreaking_scoped',
+        'nonbreaking_unscoped',
+    ]
+
     # Aggregate using Polars vectorized sum (faster than Python loops)
     aggregated = repo_df.select(
-        [pl.sum(col).alias(col) for col in commit_type_cols]
+        [pl.sum(col).alias(col) for col in commit_type_cols + breaking_scope_cols]
     ).to_dicts()[0]
 
     # Create CommitTypeCounts from aggregated dict
     # Pydantic validates NonNegativeInt constraints here
-    counts = CommitTypeCounts(**aggregated)
+    counts = CommitTypeCounts(
+        **{k: v for k, v in aggregated.items() if k in commit_type_cols}
+    )
 
     # Calculate total_commits (type-safe: sum of NonNegativeInt fields)
     # Pydantic will validate this is non-negative when creating ExportData
     total_commits = sum(counts.model_dump().values())
 
-    return counts, total_commits
+    # Extract breaking/scope counts
+    breaking_scoped = aggregated['breaking_scoped']
+    breaking_unscoped = aggregated['breaking_unscoped']
+    nonbreaking_scoped = aggregated['nonbreaking_scoped']
+    nonbreaking_unscoped = aggregated['nonbreaking_unscoped']
+
+    return (
+        counts,
+        total_commits,
+        breaking_scoped,
+        breaking_unscoped,
+        nonbreaking_scoped,
+        nonbreaking_unscoped,
+    )
 
 
 @app.command()
@@ -200,7 +226,14 @@ def export(
 
             # Aggregate commit counts using Polars + Pandera
             try:
-                counts, total_commits = aggregate_run_data(repos)
+                (
+                    counts,
+                    total_commits,
+                    breaking_scoped,
+                    breaking_unscoped,
+                    nonbreaking_scoped,
+                    nonbreaking_unscoped,
+                ) = aggregate_run_data(repos)
             except pandera.errors.SchemaError as e:
                 logger.exception('Schema validation failed', error=str(e))
                 console.print(f'[red]Data validation failed: {e}[/red]')
@@ -213,6 +246,10 @@ def export(
                 total_repos=len(repos),
                 total_commits=total_commits,
                 counts=counts,
+                breaking_scoped=breaking_scoped,
+                breaking_unscoped=breaking_unscoped,
+                nonbreaking_scoped=nonbreaking_scoped,
+                nonbreaking_unscoped=nonbreaking_unscoped,
                 methodology=Methodology(
                     # Standard methodology parameters per spec.md FR-001, FR-002
                     min_stars=3,

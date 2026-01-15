@@ -314,17 +314,17 @@ Week 3: US3 + US5 + Polish
 
 **Purpose**: Implement breaking change and scope tracking requirements (FR-033-FR-036) to enable cross-tabulation visualizations. Note: These are MUST requirements, not optional enhancements.
 
-- [ ] T081 [P] Write tests for `parse_breaking()` function in tests/test_parsing.py
-- [ ] T082 [P] Write tests for `parse_has_scope()` function in tests/test_parsing.py
-- [ ] T083 Implement `parse_breaking()` function in src/conv_commit_stats/parsing.py (depends: T081)
-- [ ] T084 Implement `parse_has_scope()` function in src/conv_commit_stats/parsing.py (depends: T082)
-- [ ] T085 [P] Write tests for `RepoRecord` with breaking/scope fields in tests/test_storage.py
-- [ ] T086 Add four breaking/scope fields to `RepoRecord` in src/conv_commit_stats/storage.py (depends: T085)
-- [ ] T087 Update Pandera schema to include breaking/scope fields in src/conv_commit_stats/storage.py (depends: T086)
-- [ ] T088 [P] Write tests for collector tracking all four combinations in tests/test_collector.py
-- [ ] T089 Update `collector.py` to track all four combinations during commit processing (depends: T083, T084, T086, T088)
-- [ ] T090 Update `aggregate_run_data()` to sum breaking/scope fields in src/conv_commit_stats/cli.py (depends: T086)
-- [ ] T091 Verify all tests pass and counts sum correctly (depends: T089, T090)
+- [x] T081 [P] Write tests for `parse_breaking()` function in tests/test_parsing.py
+- [x] T082 [P] Write tests for `parse_has_scope()` function in tests/test_parsing.py
+- [x] T083 Implement `parse_breaking()` function in src/conv_commit_stats/parsing.py (depends: T081)
+- [x] T084 Implement `parse_has_scope()` function in src/conv_commit_stats/parsing.py (depends: T082)
+- [x] T085 [P] Write tests for `RepoRecord` with breaking/scope fields in tests/test_storage.py
+- [x] T086 Add four breaking/scope fields to `RepoRecord` in src/conv_commit_stats/storage.py (depends: T085)
+- [x] T087 Update Pandera schema to include breaking/scope fields in src/conv_commit_stats/storage.py (depends: T086)
+- [x] T088 [P] Write tests for collector tracking all four combinations in tests/test_collector.py
+- [x] T089 Update `collector.py` to track all four combinations during commit processing (depends: T083, T084, T086, T088)
+- [x] T090 Update `aggregate_run_data()` to sum breaking/scope fields in src/conv_commit_stats/cli.py (depends: T086)
+- [x] T091 Verify all tests pass and counts sum correctly (depends: T089, T090)
 
 ---
 

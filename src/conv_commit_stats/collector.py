@@ -19,7 +19,9 @@ from conv_commit_stats.parsing import (
     CommitType,
     is_bot,
     is_conventional_commit,
+    parse_breaking,
     parse_commit_type,
+    parse_has_scope,
 )
 from conv_commit_stats.storage import (
     RepoRecord,
@@ -304,6 +306,10 @@ class Collector:
             # Parse commits
             type_counts: dict[str, int] = {ct.value: 0 for ct in CommitType}
             commits_analyzed = 0
+            breaking_scoped = 0
+            breaking_unscoped = 0
+            nonbreaking_scoped = 0
+            nonbreaking_unscoped = 0
 
             for commit in commits[: self.max_commits_per_repo]:
                 # Skip merge commits (2+ parents)
@@ -324,6 +330,19 @@ class Collector:
                 if commit_type:
                     type_counts[commit_type.value] += 1
                     commits_analyzed += 1
+
+                    # Track breaking/scope combinations
+                    is_breaking = parse_breaking(message)
+                    has_scope = parse_has_scope(message)
+
+                    if is_breaking and has_scope:
+                        breaking_scoped += 1
+                    elif is_breaking and not has_scope:
+                        breaking_unscoped += 1
+                    elif not is_breaking and has_scope:
+                        nonbreaking_scoped += 1
+                    else:  # not breaking and not scoped
+                        nonbreaking_unscoped += 1
 
             # Get head commit SHA (ensure it's at least 7 characters for validation)
             if commits:
@@ -346,6 +365,10 @@ class Collector:
                 license=repo_data.get('license', {}).get('spdx_id'),
                 timestamp=datetime.now(UTC),
                 commits_analyzed=commits_analyzed,
+                breaking_scoped=breaking_scoped,
+                breaking_unscoped=breaking_unscoped,
+                nonbreaking_scoped=nonbreaking_scoped,
+                nonbreaking_unscoped=nonbreaking_unscoped,
                 **type_counts,
             )
 

@@ -111,6 +111,10 @@ class RepoRecord(BaseModel):
     revert: NonNegativeInt = 0
     style: NonNegativeInt = 0
     test: NonNegativeInt = 0
+    breaking_scoped: NonNegativeInt = 0
+    breaking_unscoped: NonNegativeInt = 0
+    nonbreaking_scoped: NonNegativeInt = 0
+    nonbreaking_unscoped: NonNegativeInt = 0
 
 
 class SearchCursor(BaseModel):
@@ -185,6 +189,10 @@ class ExportData(BaseModel):
         total_repos: Number of repositories in aggregation
         total_commits: Total conventional commits counted
         counts: Aggregated counts per type
+        breaking_scoped: Aggregated breaking commits with scope
+        breaking_unscoped: Aggregated breaking commits without scope
+        nonbreaking_scoped: Aggregated non-breaking commits with scope
+        nonbreaking_unscoped: Plain commits (neither breaking/scoped)
         methodology: Collection methodology metadata
     """
 
@@ -193,6 +201,10 @@ class ExportData(BaseModel):
     total_repos: NonNegativeInt
     total_commits: NonNegativeInt
     counts: CommitTypeCounts
+    breaking_scoped: NonNegativeInt = 0
+    breaking_unscoped: NonNegativeInt = 0
+    nonbreaking_scoped: NonNegativeInt = 0
+    nonbreaking_unscoped: NonNegativeInt = 0
     methodology: Methodology
 
 
@@ -227,6 +239,12 @@ def _create_repo_record_schema() -> pap.DataFrameSchema:
     # Use CommitTypeCounts.model_fields to ensure completeness
     for field_name in CommitTypeCounts.model_fields:
         schema_dict[field_name] = pap.Column(int, checks=pap.Check.ge(0))
+
+    # Add breaking/scope combination fields
+    schema_dict['breaking_scoped'] = pap.Column(int, checks=pap.Check.ge(0))
+    schema_dict['breaking_unscoped'] = pap.Column(int, checks=pap.Check.ge(0))
+    schema_dict['nonbreaking_scoped'] = pap.Column(int, checks=pap.Check.ge(0))
+    schema_dict['nonbreaking_unscoped'] = pap.Column(int, checks=pap.Check.ge(0))
 
     return pap.DataFrameSchema(schema_dict)
 

@@ -302,6 +302,67 @@ class TestRepoRecordModel:
                 commits_analyzed=0,
             )
 
+    def test_breaking_scope_fields_default_to_zero(self) -> None:
+        """All breaking/scope count fields should default to zero."""
+        record = RepoRecord(
+            run_id='run_2026-01-12T04:00:00Z',
+            repo='owner/repo',
+            default_branch='main',
+            head_commit='abc123def',
+            stars=100,
+            created_at=datetime(2013, 5, 24, tzinfo=UTC),
+            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
+            commits_analyzed=0,
+        )
+        assert record.breaking_scoped == 0
+        assert record.breaking_unscoped == 0
+        assert record.nonbreaking_scoped == 0
+        assert record.nonbreaking_unscoped == 0
+
+    def test_breaking_scope_fields_can_be_set(self) -> None:
+        """Breaking/scope fields can be set to non-zero values."""
+        record = RepoRecord(
+            run_id='run_2026-01-12T04:00:00Z',
+            repo='owner/repo',
+            default_branch='main',
+            head_commit='abc123def',
+            stars=100,
+            created_at=datetime(2013, 5, 24, tzinfo=UTC),
+            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
+            commits_analyzed=100,
+            breaking_scoped=5,
+            breaking_unscoped=3,
+            nonbreaking_scoped=25,
+            nonbreaking_unscoped=67,
+        )
+        assert record.breaking_scoped == 5
+        assert record.breaking_unscoped == 3
+        assert record.nonbreaking_scoped == 25
+        assert record.nonbreaking_unscoped == 67
+        # Verify they sum to commits_analyzed
+        assert (
+            record.breaking_scoped
+            + record.breaking_unscoped
+            + record.nonbreaking_scoped
+            + record.nonbreaking_unscoped
+            == record.commits_analyzed
+        )
+
+    def test_breaking_scope_fields_must_be_non_negative(self) -> None:
+        """Breaking/scope fields must be non-negative."""
+        with pytest.raises(ValidationError):
+            RepoRecord(
+                run_id='run_2026-01-12T04:00:00Z',
+                repo='owner/repo',
+                default_branch='main',
+                head_commit='abc123def',
+                stars=100,
+                created_at=datetime(2013, 5, 24, tzinfo=UTC),
+                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
+                commits_analyzed=100,
+                breaking_scoped=-1,
+            )
+
 
 class TestProgressModel:
     """Test Progress model for checkpointing."""

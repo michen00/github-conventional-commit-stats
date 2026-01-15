@@ -126,6 +126,96 @@ class TestCollectorBasics:
             assert record.repo == 'facebook/react'
             assert record.feat == 1  # One feat commit
 
+    def test_process_repository_tracks_breaking_scope_combinations(
+        self, tmp_db_path: Path, mock_github_client: MagicMock
+    ) -> None:
+        """Collector tracks all four breaking/scope combinations correctly."""
+        with Storage(tmp_db_path) as storage:
+            # Create a run first
+            run = Run(
+                run_id='run_2026-01-12T04:00:00Z',
+                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
+                status=RunStatus.RUNNING,
+            )
+            storage.save_run(run)
+
+            # Mock commits with all four combinations
+            mock_github_client.get_commits.return_value = [
+                {
+                    'sha': 'abc123',
+                    'commit': {
+                        'message': 'feat(api)!: breaking change with scope',
+                        'author': {'date': '2026-01-12T10:30:00Z'},
+                    },
+                    'author': {'login': 'johndoe'},
+                    'parents': [{'sha': 'parent1'}],
+                },
+                {
+                    'sha': 'def456',
+                    'commit': {
+                        'message': 'feat!: breaking change without scope',
+                        'author': {'date': '2026-01-12T10:29:00Z'},
+                    },
+                    'author': {'login': 'johndoe'},
+                    'parents': [{'sha': 'parent2'}],
+                },
+                {
+                    'sha': 'ghi789',
+                    'commit': {
+                        'message': 'fix(ui): non-breaking with scope',
+                        'author': {'date': '2026-01-12T10:28:00Z'},
+                    },
+                    'author': {'login': 'johndoe'},
+                    'parents': [{'sha': 'parent3'}],
+                },
+                {
+                    'sha': 'jkl012',
+                    'commit': {
+                        'message': 'docs: non-breaking without scope',
+                        'author': {'date': '2026-01-12T10:27:00Z'},
+                    },
+                    'author': {'login': 'johndoe'},
+                    'parents': [{'sha': 'parent4'}],
+                },
+            ]
+
+            collector = Collector(
+                storage=storage,
+                github_client=mock_github_client,
+                max_repos=10,
+                min_stars=3,
+            )
+
+            repo_data = {
+                'full_name': 'test/repo',
+                'default_branch': 'main',
+                'stargazers_count': 100,
+                'language': 'Python',
+                'created_at': '2020-01-01T00:00:00Z',
+                'license': {'spdx_id': 'MIT'},
+            }
+
+            record = collector.process_repository(
+                run_id=run.run_id,
+                repo_data=repo_data,
+            )
+
+            assert record is not None
+            assert record.commits_analyzed == 4
+            # Verify all four combinations are tracked
+            assert record.breaking_scoped == 1  # feat(api)!
+            assert record.breaking_unscoped == 1  # feat!
+            assert record.nonbreaking_scoped == 1  # fix(ui)
+            assert record.nonbreaking_unscoped == 1  # docs
+            # Verify they sum to commits_analyzed
+            assert (
+                record.breaking_scoped
+                + record.breaking_unscoped
+                + record.nonbreaking_scoped
+                + record.nonbreaking_unscoped
+                == record.commits_analyzed
+            )
+
 
 # =============================================================================
 # COMPREHENSIVE TESTS

@@ -16,7 +16,9 @@ from conv_commit_stats.parsing import (
     CommitType,
     is_bot,
     is_conventional_commit,
+    parse_breaking,
     parse_commit_type,
+    parse_has_scope,
 )
 
 # =============================================================================
@@ -40,6 +42,7 @@ class TestConventionalCommitBasics:
 
         assert is_conventional_commit(message) is True
         assert parse_commit_type(message) == CommitType.FIX
+        assert parse_has_scope(message) is True
 
     def test_breaking_change_indicator(self) -> None:
         """Breaking changes are indicated with ! before the colon."""
@@ -47,6 +50,28 @@ class TestConventionalCommitBasics:
 
         assert is_conventional_commit(message) is True
         assert parse_commit_type(message) == CommitType.FEAT
+        assert parse_breaking(message) is True
+
+    def test_breaking_change_with_scope(self) -> None:
+        """Breaking changes can have a scope."""
+        message = 'feat(api)!: remove deprecated endpoints'
+
+        assert is_conventional_commit(message) is True
+        assert parse_commit_type(message) == CommitType.FEAT
+        assert parse_breaking(message) is True
+        assert parse_has_scope(message) is True
+
+    def test_non_breaking_commit(self) -> None:
+        """Regular commits without ! are not breaking."""
+        message = 'feat: add new feature'
+
+        assert parse_breaking(message) is False
+
+    def test_commit_without_scope(self) -> None:
+        """Commits without scope are not scoped."""
+        message = 'fix: resolve bug'
+
+        assert parse_has_scope(message) is False
 
     def test_non_conventional_commit(self) -> None:
         """Non-conventional commits return None for type extraction."""
@@ -160,6 +185,68 @@ class TestBreakingChanges:
         """Breaking change indicator (!) should be handled correctly."""
         assert is_conventional_commit(message) is True
         assert parse_commit_type(message) == expected_type
+        assert parse_breaking(message) is True
+
+    @pytest.mark.parametrize(
+        'message',
+        [
+            'feat: non-breaking feature',
+            'fix: non-breaking fix',
+            'refactor: non-breaking refactor',
+            'feat(api): non-breaking API change',
+        ],
+    )
+    def test_non_breaking_commits(self, message: str) -> None:
+        """Commits without ! should not be detected as breaking."""
+        assert parse_breaking(message) is False
+
+
+class TestScopeDetection:
+    """Test scope detection in commit messages."""
+
+    @pytest.mark.parametrize(
+        'message',
+        [
+            'feat(api): add endpoint',
+            'fix(ui): correct alignment',
+            'docs(readme): update steps',
+            'refactor(auth): simplify logic',
+            'test(integration): add tests',
+            'feat(api)!: breaking change with scope',
+        ],
+    )
+    def test_scoped_commits_detected(self, message: str) -> None:
+        """Commits with scope should be detected."""
+        assert parse_has_scope(message) is True
+
+    @pytest.mark.parametrize(
+        'message',
+        [
+            'feat: add feature',
+            'fix: resolve bug',
+            'docs: update docs',
+            'feat!: breaking without scope',
+        ],
+    )
+    def test_unscoped_commits_not_detected(self, message: str) -> None:
+        """Commits without scope should not be detected as scoped."""
+        assert parse_has_scope(message) is False
+
+    @pytest.mark.parametrize(
+        ('message', 'has_breaking', 'has_scope'),
+        [
+            ('feat: plain commit', False, False),
+            ('feat!: breaking without scope', True, False),
+            ('feat(api): scoped non-breaking', False, True),
+            ('feat(api)!: breaking with scope', True, True),
+        ],
+    )
+    def test_breaking_and_scope_combinations(
+        self, message: str, *, has_breaking: bool, has_scope: bool
+    ) -> None:
+        """Test all four combinations of breaking and scope."""
+        assert parse_breaking(message) == has_breaking
+        assert parse_has_scope(message) == has_scope
 
 
 class TestInvalidCommitFormats:
@@ -197,6 +284,11 @@ class TestEdgeCases:
         message = 'feat: add new feature\n\nThis is the body of the commit.'
         assert is_conventional_commit(message) is True
         assert parse_commit_type(message) == CommitType.FEAT
+        # Breaking and scope should also only check first line
+        breaking_message = 'feat!: breaking change\n\nBody with ! in it'
+        assert parse_breaking(breaking_message) is True
+        scope_message = 'feat(api): scoped\n\nBody with (scope) in it'
+        assert parse_has_scope(scope_message) is True
 
     def test_commit_with_special_characters_in_description(self) -> None:
         """Special characters in description should be allowed."""
