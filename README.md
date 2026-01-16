@@ -41,6 +41,15 @@ uv run conv-commit-stats --help
 
 2. **Set environment variable:**
 
+   **Option A: Using .env file (recommended for local development)**
+
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your token: GITHUB_TOKEN=ghp_your_token_here
+   ```
+
+   **Option B: Using environment variable (recommended for CI)**
+
    ```bash
    export GITHUB_TOKEN="ghp_your_token_here"
    ```
@@ -118,7 +127,7 @@ make check
 
 ## License
 
-[Add your license here]
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
