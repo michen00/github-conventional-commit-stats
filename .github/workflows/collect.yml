@@ -13,6 +13,9 @@ jobs:
     name: Collect and Deploy Statistics
     runs-on: ubuntu-latest
     timeout-minutes: 360 # 6 hours max
+    permissions:
+      contents: write # To commit and push changes
+      pages: write # To deploy to GitHub Pages
 
     steps:
       - name: Checkout repository
