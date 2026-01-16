@@ -219,6 +219,18 @@ enable-pre-commit: ## Enable pre-commit hooks (along with commit-msg and pre-pus
         echo "Install it with: pip install pre-commit (or brew install pre-commit on macOS)"; \
     fi
 
+.PHONY: enable-git-hooks
+enable-git-hooks: enable-pre-commit ## Alias for enable-pre-commit (for compatibility)
+
+.PHONY: disable-git-hooks
+disable-git-hooks: ## Disable all pre-commit hooks
+	@if command -v pre-commit >/dev/null 2>&1; then \
+		$(UV) run pre-commit uninstall --hook-type commit-msg --hook-type pre-commit --hook-type pre-push --hook-type prepare-commit-msg; \
+		echo "$(GREEN)Pre-commit hooks disabled.$(_COLOR)"; \
+	else \
+		echo "$(YELLOW)Warning: pre-commit is not installed.$(_COLOR)"; \
+	fi
+
 .PHONY: run-pre-commit
 run-pre-commit: build/install-dev ## Run the pre-commit checks
 	$(UV) run $(PRECOMMIT) run --all-files
@@ -231,7 +243,7 @@ run-pre-commit: build/install-dev ## Run the pre-commit checks
 check-install-uv: ## Check if uv is installed
 	@set -e; \
     command -v uv >/dev/null 2>&1 || { \
-        echo "$(BOLD)$(RED)installing uv$(RESET)"; \
+        echo "$(BOLD)$(RED)installing uv$(_COLOR)"; \
         curl -LsSf https://astral.sh/uv/install.sh | sh; \
     }
 
@@ -242,12 +254,51 @@ bust-ci-cache: ## Bust the CI cache
     git add $$CACHE_BUSTER && \
     git commit -m "ci: bust cache on $$(date +'%Y-%m-%d %H:%M')"
 
+.PHONY: demo
+demo: build/install-dev ## Open the visualization in your browser
+	@echo "$(BOLD)$(CYAN)Opening Conventional Commit Census visualization...$(_COLOR)"
+	@if [ ! -f docs/data.json ]; then \
+		echo "$(YELLOW)Warning: docs/data.json not found.$(_COLOR)"; \
+		echo "$(YELLOW)Run 'make demo-run' first to collect data.$(_COLOR)"; \
+		echo; \
+	fi
+	@if command -v open >/dev/null 2>&1; then \
+		open docs/index.html; \
+	elif command -v xdg-open >/dev/null 2>&1; then \
+		xdg-open docs/index.html; \
+	else \
+		echo "$(YELLOW)Please open docs/index.html in your browser$(_COLOR)"; \
+	fi
+	@echo
+	@echo "$(BOLD)Next steps:$(_COLOR)"
+	@echo "  • Run quick collection: $(CYAN)make demo-run REPOS=5$(_COLOR)"
+	@echo "  • Run full collection: $(CYAN)uv run conv-commit-stats collect --max-repos 1000$(_COLOR)"
+	@echo "  • See all commands: $(CYAN)uv run conv-commit-stats --help$(_COLOR)"
+
+.PHONY: demo-run
+REPOS ?= 3
+demo-run: build/install-dev ## Run a quick collection demo (REPOS=3, default)
+	@if [ -z "$$GITHUB_TOKEN" ]; then \
+		echo "$(RED)Error: GITHUB_TOKEN not set.$(_COLOR)"; \
+		echo "$(YELLOW)Set it with: export GITHUB_TOKEN=your_token$(_COLOR)"; \
+		exit 1; \
+	fi
+	@echo "$(BOLD)$(GREEN)Running quick collection from $(REPOS) repositories...$(_COLOR)"
+	$(UV) run conv-commit-stats collect --max-repos $(REPOS) --min-stars 1000
+	@echo "$(GREEN)Collection complete! Exporting data...$(_COLOR)"
+	$(UV) run conv-commit-stats export --output docs/data.json
+	@echo "$(BOLD)$(GREEN)Demo data ready! Run 'make demo' to view visualization.$(_COLOR)"
+
+.PHONY: demo-full
+REPOS ?= 3
+demo-full: demo-run demo ## Run collection demo then open visualization (REPOS=3, default)
+
 .PHONY: push-test
-push-test: build ## Publish the package to TestPyPI using Poetry
+push-test: build ## Publish the package to TestPyPI using uv
 	@$(UV) publish --index testpypi && echo "Package published to TestPyPI!"
 
 .PHONY: push-prod
-push-prod: build ## Publish the package to PyPI using Poetry
+push-prod: build ## Publish the package to PyPI using uv
 	@$(UV) publish && echo "Package published to PyPI!"
 
 ##############
