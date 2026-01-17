@@ -2,9 +2,10 @@
 
 A self-updating GitHub Pages site that visualizes the frequency of conventional commit types across popular public repositories.
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Tests](https://github.com/michen00/github-conventional-commit-stats/actions/workflows/CI.yml/badge.svg)](https://github.com/michen00/github-conventional-commit-stats/actions/workflows/CI.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/michen00/github-conventional-commit-stats/ci.yml?style=plastic)](https://github.com/michen00/github-conventional-commit-stats/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/michen00/github-conventional-commit-stats?style=plastic)](https://codecov.io/gh/michen00/github-conventional-commit-stats)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=plastic)](CONTRIBUTING.md)
+[![License](https://img.shields.io/github/license/michen00/github-conventional-commit-stats?style=plastic)](LICENSE)
 
 ---
 
