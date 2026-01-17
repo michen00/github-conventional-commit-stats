@@ -118,12 +118,19 @@ class Collector:
             )
             raise RuntimeError(msg)
 
-        # Create new run
+        # Create new run with config metadata
         run_id = f'run_{datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}'
+        config_metadata = {
+            'max_repos': self.max_repos,
+            'min_stars': self.min_stars,
+            'max_commits_per_repo': self.max_commits_per_repo,
+            'time_window_days': self.time_window_days,
+        }
         run = Run(
             run_id=run_id,
             started_at=datetime.now(UTC),
             status=RunStatus.RUNNING,
+            config_metadata=config_metadata,
         )
         self._storage.save_run(run)
         self._current_run_id = run_id

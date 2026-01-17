@@ -11,7 +11,7 @@ The module also exports Pydantic models for all data entities.
 from datetime import UTC, datetime
 from enum import StrEnum, auto
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import pandera.polars as pap
 from pydantic import BaseModel, Field, NonNegativeInt
@@ -60,6 +60,7 @@ class Run(BaseModel):
         repos_processed: Total repositories attempted
         repos_qualified: Repositories with valid commit data
         total_commits_analyzed: Sum of commits across all repos
+        config_metadata: Configuration parameters used for this run
     """
 
     run_id: str = Field(pattern=r'^run_\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')
@@ -69,6 +70,7 @@ class Run(BaseModel):
     repos_processed: NonNegativeInt = 0
     repos_qualified: NonNegativeInt = 0
     total_commits_analyzed: NonNegativeInt = 0
+    config_metadata: dict[str, Any]
 
 
 class RepoRecord(BaseModel):

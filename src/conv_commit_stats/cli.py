@@ -240,6 +240,21 @@ def export(
                 console.print(f'[red]Data validation failed: {e}[/red]')
                 raise typer.Exit(1) from None
 
+            # Build methodology from stored config metadata
+            config = run_obj.config_metadata
+            methodology = Methodology(
+                min_stars=config.get('min_stars', 3),
+                max_commits_per_repo=config.get('max_commits_per_repo', 100),
+                time_window_days=config.get('time_window_days', 365),
+                excluded=[
+                    'merge commits',
+                    'bot authors',
+                    'non-conventional messages',
+                    'archived repositories',
+                    'forks',
+                ],
+            )
+
             # Create export data
             export_data = ExportData(
                 run_id=run_id,
@@ -251,19 +266,7 @@ def export(
                 breaking_unscoped=breaking_unscoped,
                 nonbreaking_scoped=nonbreaking_scoped,
                 nonbreaking_unscoped=nonbreaking_unscoped,
-                methodology=Methodology(
-                    # Standard methodology parameters per spec.md FR-001, FR-002
-                    min_stars=3,
-                    max_commits_per_repo=100,
-                    time_window_days=365,
-                    excluded=[
-                        'merge commits',
-                        'bot authors',
-                        'non-conventional messages',
-                        'archived repositories',
-                        'forks',
-                    ],
-                ),
+                methodology=methodology,
             )
 
             # Write JSON

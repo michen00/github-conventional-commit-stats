@@ -11,6 +11,7 @@ Tests are organized as:
 2. Coverage tests - comprehensive parametrized tests
 """
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -37,43 +38,40 @@ from conv_commit_stats.storage import (
 class TestStorageBasics:
     """Basic examples showing how Storage works."""
 
-    def test_create_and_retrieve_run(self, tmp_db_path: Path) -> None:
+    def test_create_and_retrieve_run(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run], run_id: str
+    ) -> None:
         """Create a new run and retrieve it by ID."""
         with Storage(tmp_db_path) as storage:
             # Create a new run
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             # Retrieve it
-            retrieved = storage.get_run('run_2026-01-12T04:00:00Z')
+            retrieved = storage.get_run(run_id)
             assert retrieved is not None
-            assert retrieved.run_id == 'run_2026-01-12T04:00:00Z'
+            assert retrieved.run_id == run_id
             assert retrieved.status == RunStatus.RUNNING
 
-    def test_save_repo_record(self, tmp_db_path: Path) -> None:
+    def test_save_repo_record(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        repo_record_factory: Callable[..., RepoRecord],
+        react_repo_name: str,
+        run_id: str,
+    ) -> None:
         """Save a repository record with commit type counts."""
         with Storage(tmp_db_path) as storage:
             # First create a run
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             # Save a repo record
-            record = RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='facebook/react',
-                default_branch='main',
-                head_commit='abc123def',
+            record = repo_record_factory(
+                repo=react_repo_name,
                 stars=220000,
                 language='JavaScript',
-                created_at=datetime(2013, 5, 24, 16, 15, 54, tzinfo=UTC),
                 license='MIT',
                 timestamp=datetime(2026, 1, 12, 4, 2, 15, tzinfo=UTC),
                 commits_analyzed=100,
@@ -88,77 +86,73 @@ class TestStorageBasics:
                 style=2,
                 perf=3,
                 revert=1,
+                head_commit='abc123def',
             )
             storage.save_repo_record(record)
 
             # Retrieve repos for the run
-            repos = storage.get_repos_for_run('run_2026-01-12T04:00:00Z')
+            repos = storage.get_repos_for_run(run_id)
             assert len(repos) == 1
-            assert repos[0].repo == 'facebook/react'
+            assert repos[0].repo == react_repo_name
             assert repos[0].feat == 25
 
-    def test_progress_checkpoint(self, tmp_db_path: Path) -> None:
+    def test_progress_checkpoint(
+        self, tmp_db_path: Path, run_id: str, react_repo_name: str
+    ) -> None:
         """Save and restore progress for resume capability."""
         with Storage(tmp_db_path) as storage:
             # Save progress
-            storage.save_progress('run_id', 'run_2026-01-12T04:00:00Z')
-            storage.save_progress('last_repo', 'facebook/react')
+            storage.save_progress('run_id', run_id)
+            storage.save_progress('last_repo', react_repo_name)
 
             # Restore progress
-            run_id = storage.get_progress('run_id')
+            retrieved_run_id = storage.get_progress('run_id')
             last_repo = storage.get_progress('last_repo')
 
-            assert run_id == 'run_2026-01-12T04:00:00Z'
-            assert last_repo == 'facebook/react'
+            assert retrieved_run_id == run_id
+            assert last_repo == react_repo_name
 
 
 class TestPydanticModels:
     """Basic examples of Pydantic model validation."""
 
-    def test_run_id_format_validation(self) -> None:
+    def test_run_id_format_validation(
+        self,
+        run_factory: Callable[..., Run],
+        started_at_datetime: datetime,
+        run_id: str,
+    ) -> None:
         """Run IDs must follow the pattern run_YYYY-MM-DDTHH:MM:SSZ."""
         # Valid run ID
-        run = Run(
-            run_id='run_2026-01-12T04:00:00Z',
-            started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-            status=RunStatus.RUNNING,
-        )
-        assert run.run_id == 'run_2026-01-12T04:00:00Z'
+        run = run_factory()
+        assert run.run_id == run_id
 
         # Invalid run ID raises ValidationError
         with pytest.raises(ValidationError):
             Run(
                 run_id='invalid-run-id',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
+                started_at=started_at_datetime,
                 status=RunStatus.RUNNING,
+                config_metadata={
+                    'max_repos': 1000,
+                    'min_stars': 3,
+                    'max_commits_per_repo': 100,
+                    'time_window_days': 365,
+                },
             )
 
-    def test_repo_name_format_validation(self) -> None:
+    def test_repo_name_format_validation(
+        self,
+        repo_record_factory: Callable[..., RepoRecord],
+        react_repo_name: str,
+    ) -> None:
         """Repository names must be in owner/repo format."""
-        record = RepoRecord(
-            run_id='run_2026-01-12T04:00:00Z',
-            repo='facebook/react',
-            default_branch='main',
-            head_commit='abc123def',
-            stars=100,
-            created_at=datetime(2013, 5, 24, tzinfo=UTC),
-            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-            commits_analyzed=0,
-        )
-        assert record.repo == 'facebook/react'
+        record = repo_record_factory(repo=react_repo_name)
+        assert record.repo == react_repo_name
 
         # Invalid repo name raises ValidationError
         with pytest.raises(ValidationError):
-            RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='invalid-repo-name',  # Missing owner/
-                default_branch='main',
-                head_commit='abc123def',
-                stars=100,
-                created_at=datetime(2013, 5, 24, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-                commits_analyzed=0,
-            )
+            repo_record_factory(repo='invalid-repo-name')  # Missing owner/
 
 
 # =============================================================================
@@ -169,12 +163,12 @@ class TestPydanticModels:
 class TestRunModel:
     """Test Run model validation and constraints."""
 
-    def test_run_with_all_fields(self) -> None:
+    def test_run_with_all_fields(
+        self, run_factory: Callable[..., Run], completed_at_datetime: datetime
+    ) -> None:
         """Run with all fields populated."""
-        run = Run(
-            run_id='run_2026-01-12T04:00:00Z',
-            started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-            completed_at=datetime(2026, 1, 12, 5, 15, 0, tzinfo=UTC),
+        run = run_factory(
+            completed_at=completed_at_datetime,
             status=RunStatus.COMPLETED,
             repos_processed=1000,
             repos_qualified=847,
@@ -183,13 +177,9 @@ class TestRunModel:
         assert run.repos_processed == 1000
         assert run.total_commits_analyzed == 84700
 
-    def test_run_default_values(self) -> None:
+    def test_run_default_values(self, run_factory: Callable[..., Run]) -> None:
         """Run with default values for optional fields."""
-        run = Run(
-            run_id='run_2026-01-12T04:00:00Z',
-            started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-            status=RunStatus.RUNNING,
-        )
+        run = run_factory()
         assert run.completed_at is None
         assert run.repos_processed == 0
         assert run.repos_qualified == 0
@@ -199,41 +189,27 @@ class TestRunModel:
         'status',
         [RunStatus.RUNNING, RunStatus.COMPLETED, RunStatus.FAILED],
     )
-    def test_all_run_statuses(self, status: RunStatus) -> None:
+    def test_all_run_statuses(
+        self, status: RunStatus, run_factory: Callable[..., Run]
+    ) -> None:
         """All run statuses should be valid."""
-        run = Run(
-            run_id='run_2026-01-12T04:00:00Z',
-            started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-            status=status,
-        )
+        run = run_factory(status=status)
         assert run.status == status
 
-    def test_negative_counts_rejected(self) -> None:
+    def test_negative_counts_rejected(self, run_factory: Callable[..., Run]) -> None:
         """Negative counts should be rejected."""
         with pytest.raises(ValidationError):
-            Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-                repos_processed=-1,
-            )
+            run_factory(repos_processed=-1)
 
 
 class TestRepoRecordModel:
     """Test RepoRecord model validation and constraints."""
 
-    def test_commit_counts_default_to_zero(self) -> None:
+    def test_commit_counts_default_to_zero(
+        self, repo_record_factory: Callable[..., RepoRecord]
+    ) -> None:
         """All commit type counts should default to zero."""
-        record = RepoRecord(
-            run_id='run_2026-01-12T04:00:00Z',
-            repo='owner/repo',
-            default_branch='main',
-            head_commit='abc123def',
-            stars=100,
-            created_at=datetime(2013, 5, 24, tzinfo=UTC),
-            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-            commits_analyzed=0,
-        )
+        record = repo_record_factory()
         assert record.feat == 0
         assert record.fix == 0
         assert record.docs == 0
@@ -246,89 +222,45 @@ class TestRepoRecordModel:
         assert record.style == 0
         assert record.test == 0
 
-    def test_minimum_stars_validation(self) -> None:
+    def test_minimum_stars_validation(
+        self, repo_record_factory: Callable[..., RepoRecord]
+    ) -> None:
         """Stars must be at least 3 (filter threshold)."""
         # Valid: exactly 3 stars
-        record = RepoRecord(
-            run_id='run_2026-01-12T04:00:00Z',
-            repo='owner/repo',
-            default_branch='main',
-            head_commit='abc123def',
-            stars=3,
-            created_at=datetime(2013, 5, 24, tzinfo=UTC),
-            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-            commits_analyzed=0,
-        )
+        record = repo_record_factory(stars=3)
         assert record.stars == 3
 
         # Invalid: less than 3 stars
         with pytest.raises(ValidationError):
-            RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc123def',
-                stars=2,
-                created_at=datetime(2013, 5, 24, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-                commits_analyzed=0,
-            )
+            repo_record_factory(stars=2)
 
-    def test_head_commit_sha_length(self) -> None:
+    def test_head_commit_sha_length(
+        self, repo_record_factory: Callable[..., RepoRecord]
+    ) -> None:
         """Head commit SHA must be between 7 and 40 characters."""
         # Valid: 7 characters
-        record = RepoRecord(
-            run_id='run_2026-01-12T04:00:00Z',
-            repo='owner/repo',
-            default_branch='main',
-            head_commit='abc1234',
-            stars=100,
-            created_at=datetime(2013, 5, 24, tzinfo=UTC),
-            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-            commits_analyzed=0,
-        )
+        record = repo_record_factory(head_commit='abc1234')
         assert len(record.head_commit) == 7
 
         # Invalid: too short
         with pytest.raises(ValidationError):
-            RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc',
-                stars=100,
-                created_at=datetime(2013, 5, 24, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-                commits_analyzed=0,
-            )
+            repo_record_factory(head_commit='abc')
 
-    def test_breaking_scope_fields_default_to_zero(self) -> None:
+    def test_breaking_scope_fields_default_to_zero(
+        self, repo_record_factory: Callable[..., RepoRecord]
+    ) -> None:
         """All breaking/scope count fields should default to zero."""
-        record = RepoRecord(
-            run_id='run_2026-01-12T04:00:00Z',
-            repo='owner/repo',
-            default_branch='main',
-            head_commit='abc123def',
-            stars=100,
-            created_at=datetime(2013, 5, 24, tzinfo=UTC),
-            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-            commits_analyzed=0,
-        )
+        record = repo_record_factory()
         assert record.breaking_scoped == 0
         assert record.breaking_unscoped == 0
         assert record.nonbreaking_scoped == 0
         assert record.nonbreaking_unscoped == 0
 
-    def test_breaking_scope_fields_can_be_set(self) -> None:
+    def test_breaking_scope_fields_can_be_set(
+        self, repo_record_factory: Callable[..., RepoRecord]
+    ) -> None:
         """Breaking/scope fields can be set to non-zero values."""
-        record = RepoRecord(
-            run_id='run_2026-01-12T04:00:00Z',
-            repo='owner/repo',
-            default_branch='main',
-            head_commit='abc123def',
-            stars=100,
-            created_at=datetime(2013, 5, 24, tzinfo=UTC),
-            timestamp=datetime(2026, 1, 12, tzinfo=UTC),
+        record = repo_record_factory(
             commits_analyzed=100,
             breaking_scoped=5,
             breaking_unscoped=3,
@@ -348,20 +280,12 @@ class TestRepoRecordModel:
             == record.commits_analyzed
         )
 
-    def test_breaking_scope_fields_must_be_non_negative(self) -> None:
+    def test_breaking_scope_fields_must_be_non_negative(
+        self, repo_record_factory: Callable[..., RepoRecord]
+    ) -> None:
         """Breaking/scope fields must be non-negative."""
         with pytest.raises(ValidationError):
-            RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc123def',
-                stars=100,
-                created_at=datetime(2013, 5, 24, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-                commits_analyzed=100,
-                breaking_scoped=-1,
-            )
+            repo_record_factory(commits_analyzed=100, breaking_scoped=-1)
 
 
 class TestProgressModel:
@@ -393,11 +317,13 @@ class TestProgressModel:
 class TestExportDataModel:
     """Test ExportData model for visualization JSON."""
 
-    def test_complete_export_data(self) -> None:
+    def test_complete_export_data(
+        self, run_id: str, completed_at_datetime: datetime
+    ) -> None:
         """ExportData with all required fields."""
         export = ExportData(
-            run_id='run_2026-01-12T04:00:00Z',
-            generated_at=datetime(2026, 1, 12, 5, 20, 0, tzinfo=UTC),
+            run_id=run_id,
+            generated_at=completed_at_datetime,
             total_repos=847,
             total_commits=84700,
             counts=CommitTypeCounts(
@@ -437,12 +363,14 @@ class TestExportDataModel:
 class TestStorageOperations:
     """Test Storage class CRUD operations."""
 
-    def test_list_all_runs(self, tmp_db_path: Path) -> None:
+    def test_list_all_runs(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """List all runs in storage."""
         with Storage(tmp_db_path) as storage:
             # Create multiple runs
             for i in range(3):
-                run = Run(
+                run = run_factory(
                     run_id=f'run_2026-01-{10 + i:02d}T04:00:00Z',
                     started_at=datetime(2026, 1, 10 + i, 4, 0, 0, tzinfo=UTC),
                     status=RunStatus.COMPLETED,
@@ -452,59 +380,54 @@ class TestStorageOperations:
             runs = storage.list_runs()
             assert len(runs) == 3
 
-    def test_update_run_status(self, tmp_db_path: Path) -> None:
+    def test_update_run_status(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        run_id: str,
+        completed_at_datetime: datetime,
+    ) -> None:
         """Update a run's status."""
         with Storage(tmp_db_path) as storage:
             # Create a running run
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             # Update to completed
             run.status = RunStatus.COMPLETED
-            run.completed_at = datetime(2026, 1, 12, 5, 15, 0, tzinfo=UTC)
+            run.completed_at = completed_at_datetime
             run.repos_processed = 1000
             run.repos_qualified = 847
             storage.save_run(run)
 
             # Verify update
-            updated = storage.get_run('run_2026-01-12T04:00:00Z')
+            updated = storage.get_run(run_id)
             assert updated is not None
             assert updated.status == RunStatus.COMPLETED
             assert updated.repos_processed == 1000
 
-    def test_delete_run_and_repos(self, tmp_db_path: Path) -> None:
+    def test_delete_run_and_repos(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        repo_record_factory: Callable[..., RepoRecord],
+        run_id: str,
+    ) -> None:
         """Delete a run and its associated repo records."""
         with Storage(tmp_db_path) as storage:
             # Create a run with repos
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.COMPLETED,
-            )
+            run = run_factory(status=RunStatus.COMPLETED)
             storage.save_run(run)
 
-            record = RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc123def',
-                stars=100,
-                created_at=datetime(2013, 5, 24, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-                commits_analyzed=10,
-            )
+            record = repo_record_factory(commits_analyzed=10)
             storage.save_repo_record(record)
 
             # Delete run
-            storage.delete_run('run_2026-01-12T04:00:00Z')
+            storage.delete_run(run_id)
 
             # Verify deletion
-            assert storage.get_run('run_2026-01-12T04:00:00Z') is None
-            assert len(storage.get_repos_for_run('run_2026-01-12T04:00:00Z')) == 0
+            assert storage.get_run(run_id) is None
+            assert len(storage.get_repos_for_run(run_id)) == 0
 
     def test_get_nonexistent_run(self, tmp_db_path: Path) -> None:
         """Getting a nonexistent run returns None."""
@@ -516,11 +439,13 @@ class TestStorageOperations:
         with Storage(tmp_db_path) as storage:
             assert storage.get_progress('nonexistent-key') is None
 
-    def test_clear_progress(self, tmp_db_path: Path) -> None:
+    def test_clear_progress(
+        self, tmp_db_path: Path, run_id: str, repo_name: str
+    ) -> None:
         """Clear all progress data."""
         with Storage(tmp_db_path) as storage:
-            storage.save_progress('run_id', 'run_2026-01-12T04:00:00Z')
-            storage.save_progress('last_repo', 'owner/repo')
+            storage.save_progress('run_id', run_id)
+            storage.save_progress('last_repo', repo_name)
 
             storage.clear_progress()
 
@@ -531,12 +456,14 @@ class TestStorageOperations:
 class TestStorageRetention:
     """Test retention policy enforcement."""
 
-    def test_get_latest_completed_run(self, tmp_db_path: Path) -> None:
+    def test_get_latest_completed_run(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """Get the most recent completed run."""
         with Storage(tmp_db_path) as storage:
             # Create multiple runs
             for i in range(3):
-                run = Run(
+                run = run_factory(
                     run_id=f'run_2026-01-{10 + i:02d}T04:00:00Z',
                     started_at=datetime(2026, 1, 10 + i, 4, 0, 0, tzinfo=UTC),
                     status=RunStatus.COMPLETED,
@@ -545,13 +472,15 @@ class TestStorageRetention:
 
             latest = storage.get_latest_completed_run()
             assert latest is not None
-            assert latest.run_id == 'run_2026-01-12T04:00:00Z'
+            assert latest.run_id == 'run_2026-01-12T04:00:00Z'  # Most recent of the 3
 
-    def test_get_latest_completed_run_ignores_running(self, tmp_db_path: Path) -> None:
+    def test_get_latest_completed_run_ignores_running(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """Latest completed run should ignore running runs."""
         with Storage(tmp_db_path) as storage:
             # Create a completed run
-            completed = Run(
+            completed = run_factory(
                 run_id='run_2026-01-10T04:00:00Z',
                 started_at=datetime(2026, 1, 10, 4, 0, 0, tzinfo=UTC),
                 status=RunStatus.COMPLETED,
@@ -559,23 +488,24 @@ class TestStorageRetention:
             storage.save_run(completed)
 
             # Create a running run (more recent)
-            running = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            running = run_factory()
             storage.save_run(running)
 
             latest = storage.get_latest_completed_run()
             assert latest is not None
             assert latest.run_id == 'run_2026-01-10T04:00:00Z'
 
-    def test_prune_old_runs(self, tmp_db_path: Path) -> None:
+    def test_prune_old_runs(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        repo_record_factory: Callable[..., RepoRecord],
+    ) -> None:
         """Prune runs beyond retention limit."""
         with Storage(tmp_db_path) as storage:
             # Create 5 completed runs
             for i in range(5):
-                run = Run(
+                run = run_factory(
                     run_id=f'run_2026-01-{10 + i:02d}T04:00:00Z',
                     started_at=datetime(2026, 1, 10 + i, 4, 0, 0, tzinfo=UTC),
                     status=RunStatus.COMPLETED,
@@ -583,13 +513,9 @@ class TestStorageRetention:
                 storage.save_run(run)
 
                 # Add a repo record to each run
-                record = RepoRecord(
+                record = repo_record_factory(
                     run_id=f'run_2026-01-{10 + i:02d}T04:00:00Z',
                     repo=f'owner/repo{i}',
-                    default_branch='main',
-                    head_commit='abc123def',
-                    stars=100,
-                    created_at=datetime(2013, 5, 24, tzinfo=UTC),
                     timestamp=datetime(2026, 1, 10 + i, tzinfo=UTC),
                     commits_analyzed=10,
                 )
@@ -616,71 +542,61 @@ class TestStorageRetention:
 class TestStorageAtomicity:
     """Test atomic operations and data integrity."""
 
-    def test_save_checkpoint_is_atomic(self, tmp_db_path: Path) -> None:
+    def test_save_checkpoint_is_atomic(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        repo_record_factory: Callable[..., RepoRecord],
+        run_id: str,
+        repo_name: str,
+    ) -> None:
         """Checkpoint saves should be atomic."""
         with Storage(tmp_db_path) as storage:
             # Create a run
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             # Save a checkpoint (run + repo + progress atomically)
-            record = RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc123def',
-                stars=100,
-                created_at=datetime(2013, 5, 24, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
-                commits_analyzed=10,
-            )
+            record = repo_record_factory(commits_analyzed=10)
 
             storage.save_checkpoint(
                 run=run,
                 record=record,
-                last_repo='owner/repo',
+                last_repo=repo_name,
             )
 
             # Verify all data saved
-            assert storage.get_run('run_2026-01-12T04:00:00Z') is not None
-            assert len(storage.get_repos_for_run('run_2026-01-12T04:00:00Z')) == 1
-            assert storage.get_progress('last_repo') == 'owner/repo'
+            assert storage.get_run(run_id) is not None
+            assert len(storage.get_repos_for_run(run_id)) == 1
+            assert storage.get_progress('last_repo') == repo_name
 
 
 class TestStoragePersistence:
     """Test that data persists across Storage instances."""
 
-    def test_data_persists_after_close(self, tmp_db_path: Path) -> None:
+    def test_data_persists_after_close(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run], run_id: str
+    ) -> None:
         """Data should persist after closing and reopening storage."""
         # First instance: create data
         with Storage(tmp_db_path) as storage1:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.COMPLETED,
-            )
+            run = run_factory(status=RunStatus.COMPLETED)
             storage1.save_run(run)
 
         # Second instance: verify data
         with Storage(tmp_db_path) as storage2:
-            retrieved = storage2.get_run('run_2026-01-12T04:00:00Z')
+            retrieved = storage2.get_run(run_id)
             assert retrieved is not None
             assert retrieved.status == RunStatus.COMPLETED
 
-    def test_creates_directory_if_missing(self, tmp_path: Path) -> None:
+    def test_creates_directory_if_missing(
+        self, tmp_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """Storage should create the data directory if it doesn't exist."""
         db_path = tmp_path / 'nested' / 'data' / 'dir'
         with Storage(db_path) as storage:
             # Should not raise, should create the directory
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             assert db_path.exists()

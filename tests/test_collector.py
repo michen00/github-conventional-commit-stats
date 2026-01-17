@@ -8,6 +8,7 @@ This module tests the Collector class:
 """
 
 import signal
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -89,16 +90,15 @@ class TestCollectorBasics:
             mock_github_client.search_repositories.assert_called()
 
     def test_process_repository(
-        self, tmp_db_path: Path, mock_github_client: MagicMock
+        self,
+        tmp_db_path: Path,
+        mock_github_client: MagicMock,
+        run_factory: Callable[..., Run],
     ) -> None:
         """Collector can process a single repository and parse commits."""
         with Storage(tmp_db_path) as storage:
             # Create a run first
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             collector = Collector(
@@ -127,16 +127,15 @@ class TestCollectorBasics:
             assert record.feat == 1  # One feat commit
 
     def test_process_repository_tracks_breaking_scope_combinations(
-        self, tmp_db_path: Path, mock_github_client: MagicMock
+        self,
+        tmp_db_path: Path,
+        mock_github_client: MagicMock,
+        run_factory: Callable[..., Run],
     ) -> None:
         """Collector tracks all four breaking/scope combinations correctly."""
         with Storage(tmp_db_path) as storage:
             # Create a run first
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             # Mock commits with all four combinations
@@ -238,7 +237,9 @@ class TestRepositoryDiscovery:
             # Mock responses for different star ranges
             call_count = 0
 
-            def search_side_effect(*_args: Any, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
+            def search_side_effect(
+                *_args: object, **kwargs: object
+            ) -> list[dict[str, object]]:
                 nonlocal call_count
                 call_count += 1
                 query = kwargs.get('query', '')
@@ -351,15 +352,14 @@ class TestCommitProcessing:
         return client
 
     def test_parses_conventional_commits(
-        self, tmp_db_path: Path, mock_github_client: MagicMock
+        self,
+        tmp_db_path: Path,
+        mock_github_client: MagicMock,
+        run_factory: Callable[..., Run],
     ) -> None:
         """Collector correctly parses conventional commit types."""
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             collector = Collector(
@@ -389,15 +389,14 @@ class TestCommitProcessing:
             assert record.commits_analyzed == 2  # Merge commit excluded
 
     def test_excludes_merge_commits(
-        self, tmp_db_path: Path, mock_github_client: MagicMock
+        self,
+        tmp_db_path: Path,
+        mock_github_client: MagicMock,
+        run_factory: Callable[..., Run],
     ) -> None:
         """Collector excludes merge commits (2+ parents)."""
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             collector = Collector(
@@ -425,7 +424,9 @@ class TestCommitProcessing:
             assert record is not None
             assert record.commits_analyzed == 2
 
-    def test_excludes_bot_commits(self, tmp_db_path: Path) -> None:
+    def test_excludes_bot_commits(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """Collector excludes commits from bot authors."""
         mock_client = MagicMock()
         mock_client.get_commits.return_value = [
@@ -450,11 +451,7 @@ class TestCommitProcessing:
         ]
 
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             collector = Collector(
@@ -484,7 +481,10 @@ class TestCommitProcessing:
             assert record.fix == 1
 
     def test_respects_max_commits_per_repo(
-        self, tmp_db_path: Path, mock_github_client: MagicMock
+        self,
+        tmp_db_path: Path,
+        mock_github_client: MagicMock,
+        run_factory: Callable[..., Run],
     ) -> None:
         """Collector limits commits per repository."""
         # Return 200 commits
@@ -502,11 +502,7 @@ class TestCommitProcessing:
         ]
 
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
             collector = Collector(
@@ -571,7 +567,9 @@ class TestCheckpointing:
 
             collector.complete_collection(run_id)
 
-    def test_can_resume_from_checkpoint(self, tmp_db_path: Path) -> None:
+    def test_can_resume_from_checkpoint(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """Collector can resume from a saved checkpoint."""
         mock_client = MagicMock()
         mock_client.search_repositories.return_value = [
@@ -588,11 +586,7 @@ class TestCheckpointing:
 
         with Storage(tmp_db_path) as storage:
             # Create a run and checkpoint
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
             storage.save_progress('last_repo', 'owner/repo1')
 

@@ -4,15 +4,16 @@ These tests verify that CLI commands can be invoked and produce expected output.
 They use CliRunner from Typer for testing.
 """
 
-import os
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from typer.testing import CliRunner
 
 from conv_commit_stats.cli import app
-from conv_commit_stats.storage import RepoRecord, Run, RunStatus, Storage
+from conv_commit_stats.storage import Run, RunStatus, Storage
 
 runner = CliRunner()
 
@@ -41,9 +42,12 @@ class TestCLIBasics:
         assert '--max-repos' in result.stdout
         assert '--min-stars' in result.stdout
 
-    @patch.dict(os.environ, {}, clear=True)
-    def test_collect_requires_github_token(self, tmp_db_path: Path) -> None:
+    def test_collect_requires_github_token(
+        self, tmp_db_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Collect command requires GITHUB_TOKEN environment variable."""
+        # Remove GITHUB_TOKEN if it exists
+        monkeypatch.delenv('GITHUB_TOKEN', raising=False)
         result = runner.invoke(
             app,
             ['collect', '--max-repos', '1', '--db-path', str(tmp_db_path)],
@@ -55,17 +59,18 @@ class TestCLIBasics:
 class TestCollectCommand:
     """Test the collect command."""
 
-    @patch.dict(os.environ, {'GITHUB_TOKEN': 'test-token'}, clear=False)
     @patch('conv_commit_stats.cli.Collector')
     def test_collect_command_basic(
         self,
         mock_collector_class: MagicMock,
         tmp_db_path: Path,
+        github_token_env: None,  # noqa: ARG002
+        run_id: str,
     ) -> None:
         """Collect command runs successfully with valid token."""
         # Mock the collector
         mock_collector = MagicMock()
-        mock_collector.run.return_value = 'run_2026-01-12T04:00:00Z'
+        mock_collector.run.return_value = run_id
         mock_collector_class.return_value = mock_collector
 
         result = runner.invoke(
@@ -84,16 +89,17 @@ class TestCollectCommand:
         assert result.exit_code == 0
         mock_collector.run.assert_called_once()
 
-    @patch.dict(os.environ, {'GITHUB_TOKEN': 'test-token'}, clear=False)
     @patch('conv_commit_stats.cli.Collector')
     def test_collect_with_resume(
         self,
         mock_collector_class: MagicMock,
         tmp_db_path: Path,
+        github_token_env: None,  # noqa: ARG002
+        run_id: str,
     ) -> None:
         """Collect command supports --resume flag."""
         mock_collector = MagicMock()
-        mock_collector.run.return_value = 'run_2026-01-12T04:00:00Z'
+        mock_collector.run.return_value = run_id
         mock_collector_class.return_value = mock_collector
 
         result = runner.invoke(
@@ -113,14 +119,18 @@ class TestCollectCommand:
 class TestExportCommand:
     """Test the export command."""
 
-    def test_export_command_basic(self, tmp_db_path: Path) -> None:
+    def test_export_command_basic(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        repo_record_factory: Callable[..., object],
+        completed_at_datetime: datetime,
+    ) -> None:
         """Export command exports data to JSON."""
         # Create a completed run with data
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                completed_at=datetime(2026, 1, 12, 5, 0, 0, tzinfo=UTC),
+            run = run_factory(
+                completed_at=completed_at_datetime,
                 status=RunStatus.COMPLETED,
                 repos_processed=10,
                 repos_qualified=8,
@@ -129,14 +139,8 @@ class TestExportCommand:
             storage.save_run(run)
 
             # Add a repo record
-            repo = RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc123def456',
-                stars=100,
+            repo = repo_record_factory(
                 created_at=datetime(2020, 1, 1, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
                 commits_analyzed=10,
                 feat=5,
                 fix=3,
@@ -162,13 +166,12 @@ class TestExportCommand:
 class TestStatusCommand:
     """Test the status command."""
 
-    def test_status_shows_running_run(self, tmp_db_path: Path) -> None:
+    def test_status_shows_running_run(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run], run_id: str
+    ) -> None:
         """Status command shows current running run."""
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
+            run = run_factory(
                 repos_processed=5,
                 repos_qualified=4,
                 total_commits_analyzed=50,
@@ -182,7 +185,7 @@ class TestStatusCommand:
 
         assert result.exit_code == 0
         assert 'running' in result.stdout.lower()
-        assert 'run_2026-01-12T04:00:00Z' in result.stdout
+        assert run_id in result.stdout
 
     def test_status_shows_no_runs(self, tmp_db_path: Path) -> None:
         """Status command handles case with no runs."""
@@ -198,13 +201,17 @@ class TestStatusCommand:
 class TestValidateCommand:
     """Test the validate command."""
 
-    def test_validate_passes_with_valid_data(self, tmp_db_path: Path) -> None:
+    def test_validate_passes_with_valid_data(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        repo_record_factory: Callable[..., object],
+        completed_at_datetime: datetime,
+    ) -> None:
         """Validate command passes with valid data."""
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                completed_at=datetime(2026, 1, 12, 5, 0, 0, tzinfo=UTC),
+            run = run_factory(
+                completed_at=completed_at_datetime,
                 status=RunStatus.COMPLETED,
                 repos_processed=10,
                 repos_qualified=8,
@@ -213,14 +220,8 @@ class TestValidateCommand:
             storage.save_run(run)
 
             # Add a repo record with valid counts
-            repo = RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc123def456',
-                stars=100,
+            repo = repo_record_factory(
                 created_at=datetime(2020, 1, 1, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
                 commits_analyzed=10,
                 feat=5,
                 fix=3,
@@ -276,13 +277,16 @@ class TestExportErrorPaths:
         assert result.exit_code == 1
         assert 'Run not found' in result.stdout
 
-    def test_export_with_no_repos(self, tmp_db_path: Path) -> None:
+    def test_export_with_no_repos(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        completed_at_datetime: datetime,
+    ) -> None:
         """Export fails gracefully when run has no repos."""
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                completed_at=datetime(2026, 1, 12, 5, 0, 0, tzinfo=UTC),
+            run = run_factory(
+                completed_at=completed_at_datetime,
                 status=RunStatus.COMPLETED,
                 repos_processed=0,
                 repos_qualified=0,
@@ -318,13 +322,18 @@ class TestValidateErrorPaths:
         assert result.exit_code == 1
         assert 'Run not found' in result.stdout
 
-    def test_validate_detects_data_integrity_issues(self, tmp_db_path: Path) -> None:
+    def test_validate_detects_data_integrity_issues(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        repo_record_factory: Callable[..., object],
+        completed_at_datetime: datetime,
+        run_id: str,
+    ) -> None:
         """Validate detects when commit counts don't sum correctly."""
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                completed_at=datetime(2026, 1, 12, 5, 0, 0, tzinfo=UTC),
+            run = run_factory(
+                completed_at=completed_at_datetime,
                 status=RunStatus.COMPLETED,
                 repos_processed=1,
                 repos_qualified=1,
@@ -333,14 +342,8 @@ class TestValidateErrorPaths:
             storage.save_run(run)
 
             # Create repo with mismatched counts (commits_analyzed=10 but sum=5)
-            repo = RepoRecord(
-                run_id='run_2026-01-12T04:00:00Z',
-                repo='owner/repo',
-                default_branch='main',
-                head_commit='abc123def456',
-                stars=100,
+            repo = repo_record_factory(
                 created_at=datetime(2020, 1, 1, tzinfo=UTC),
-                timestamp=datetime(2026, 1, 12, tzinfo=UTC),
                 commits_analyzed=10,  # Says 10 commits
                 feat=3,
                 fix=2,
@@ -353,7 +356,7 @@ class TestValidateErrorPaths:
             [
                 'validate',
                 '--run',
-                'run_2026-01-12T04:00:00Z',
+                run_id,
                 '--db-path',
                 str(tmp_db_path),
             ],
@@ -366,16 +369,16 @@ class TestValidateErrorPaths:
 class TestCollectErrorPaths:
     """Test collect command error handling."""
 
-    @patch.dict(os.environ, {'GITHUB_TOKEN': 'test-token'}, clear=False)
-    def test_collect_with_concurrent_run(self, tmp_db_path: Path) -> None:
+    def test_collect_with_concurrent_run(
+        self,
+        tmp_db_path: Path,
+        run_factory: Callable[..., Run],
+        github_token_env: None,  # noqa: ARG002
+    ) -> None:
         """Collect fails when another run is already in progress."""
         # Create a running run
         with Storage(tmp_db_path) as storage:
-            run = Run(
-                run_id='run_2026-01-12T04:00:00Z',
-                started_at=datetime(2026, 1, 12, 4, 0, 0, tzinfo=UTC),
-                status=RunStatus.RUNNING,
-            )
+            run = run_factory()
             storage.save_run(run)
 
         # Attempting to start a new collection should fail
@@ -393,12 +396,14 @@ class TestCollectErrorPaths:
 class TestPruneCommand:
     """Test the prune command."""
 
-    def test_prune_removes_old_runs(self, tmp_db_path: Path) -> None:
+    def test_prune_removes_old_runs(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """Prune command removes runs beyond retention limit."""
         with Storage(tmp_db_path) as storage:
             # Create 5 completed runs
             for i in range(5):
-                run = Run(
+                run = run_factory(
                     run_id=f'run_2026-01-{10 + i:02d}T04:00:00Z',
                     started_at=datetime(2026, 1, 10 + i, 4, 0, 0, tzinfo=UTC),
                     completed_at=datetime(2026, 1, 10 + i, 5, 0, 0, tzinfo=UTC),
@@ -422,12 +427,14 @@ class TestPruneCommand:
             completed = [r for r in runs if r.status == RunStatus.COMPLETED]
             assert len(completed) == 3
 
-    def test_prune_dry_run(self, tmp_db_path: Path) -> None:
+    def test_prune_dry_run(
+        self, tmp_db_path: Path, run_factory: Callable[..., Run]
+    ) -> None:
         """Prune command with --dry-run doesn't delete anything."""
         with Storage(tmp_db_path) as storage:
             # Create 5 completed runs
             for i in range(5):
-                run = Run(
+                run = run_factory(
                     run_id=f'run_2026-01-{10 + i:02d}T04:00:00Z',
                     started_at=datetime(2026, 1, 10 + i, 4, 0, 0, tzinfo=UTC),
                     completed_at=datetime(2026, 1, 10 + i, 5, 0, 0, tzinfo=UTC),
