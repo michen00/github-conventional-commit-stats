@@ -6,6 +6,14 @@ A self-updating GitHub Pages site that visualizes the frequency of conventional 
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Tests](https://github.com/michen00/github-conventional-commit-stats/actions/workflows/CI.yml/badge.svg)](https://github.com/michen00/github-conventional-commit-stats/actions/workflows/CI.yml)
 
+---
+
+## 🌐 [View Live Visualization →](https://michen00.github.io/github-conventional-commit-stats/)
+
+Interactive visualization of conventional commit type frequencies across popular GitHub repositories. Updated monthly via automated CI/CD.
+
+---
+
 ## Features
 
 - 📊 **Interactive Visualization**: Horizontal bar chart showing commit type frequencies
@@ -16,62 +24,138 @@ A self-updating GitHub Pages site that visualizes the frequency of conventional 
 
 ## Quick Start
 
-### Installation
+Get up and running in minutes! This guide will take you from zero to visualizing commit statistics.
+
+### Step 1: Install
 
 ```bash
 # Clone the repository
 git clone https://github.com/michen00/github-conventional-commit-stats.git
 cd github-conventional-commit-stats
 
-# Install dependencies
+# Install dependencies (creates virtual environment automatically)
 make develop
 
 # Verify installation
 uv run conv-commit-stats --help
 ```
 
-### Configuration
+### Step 2: Configure GitHub Token
 
-1. **Get a GitHub Personal Access Token:**
-
-   - Go to <https://github.com/settings/tokens>
+1. **Create a GitHub Personal Access Token:**
+   - Visit <https://github.com/settings/tokens>
    - Click "Generate new token" → "Generate new token (classic)"
+   - Name it (e.g., "conv-commit-stats")
    - Select scope: `public_repo` (read access to public repositories)
-   - Generate and copy the token
+   - Generate and copy the token (starts with `ghp_`)
 
-2. **Set environment variable:**
+2. **Set the token:**
 
-   **Option A: Using .env file (recommended for local development)**
+   **For local development (recommended):**
 
    ```bash
    cp .env.example .env
-   # Edit .env and add your token: GITHUB_TOKEN=ghp_your_token_here
+   # Edit .env and replace ghp_your_token_here with your actual token
    ```
 
-   **Option B: Using environment variable (recommended for CI)**
+   **For CI/CD or one-time use:**
 
    ```bash
    export GITHUB_TOKEN="ghp_your_token_here"
    ```
 
-### Usage
+3. **Verify your token works:**
+
+   ```bash
+   # Test the token (should show rate limit info)
+   curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+     https://api.github.com/rate_limit | python -m json.tool
+   ```
+
+### Step 3: Quick Test Run (10 repos)
+
+Test the system with a small sample before running a full collection:
 
 ```bash
-# Collect statistics from GitHub repositories
-uv run conv-commit-stats collect --max-repos 1000 --min-stars 3
+# Collect from 10 high-star repositories (~1-2 minutes)
+uv run conv-commit-stats collect --max-repos 10 --min-stars 10000
+
+# Check what was collected
+uv run conv-commit-stats status
 
 # Export data for visualization
 uv run conv-commit-stats export --output docs/data.json
 
-# Validate data integrity
+# Validate everything looks good
 uv run conv-commit-stats validate
-
-# Check collection status
-uv run conv-commit-stats status
-
-# Prune old runs (keep only 3 most recent)
-uv run conv-commit-stats prune --keep 3
 ```
+
+### Step 4: View Your Results
+
+Open the visualization in your browser:
+
+```bash
+# Start a local server
+cd docs && python -m http.server 8000
+
+# Open http://localhost:8000 in your browser
+```
+
+You should see an interactive bar chart showing commit type frequencies!
+
+### Step 5: Full Collection (Optional)
+
+Ready for the full dataset? Collect from ~1000 repositories:
+
+```bash
+# Start full collection (may take 1-6 hours depending on rate limits)
+uv run conv-commit-stats collect --max-repos 1000 --min-stars 3
+
+# If interrupted, resume from checkpoint
+uv run conv-commit-stats collect --resume
+
+# Export and validate
+uv run conv-commit-stats export
+uv run conv-commit-stats validate
+```
+
+**💡 Tip:** The collection process automatically saves checkpoints, so you can safely interrupt and resume later.
+
+### Troubleshooting
+
+**Token not working?**
+
+```bash
+# Verify token is set
+echo $GITHUB_TOKEN
+
+# Test token with GitHub API
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/rate_limit | python -m json.tool
+```
+
+**Rate limit exceeded?**
+
+```bash
+# Check when rate limit resets
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/rate_limit | python -m json.tool
+
+# Resume after rate limit resets
+uv run conv-commit-stats collect --resume
+```
+
+**No data after export?**
+
+```bash
+# Make sure you've run collection first
+uv run conv-commit-stats collect --max-repos 10
+
+# Then export
+uv run conv-commit-stats export
+```
+
+**Need more help?** See the [detailed Quickstart Guide](specs/001-initial-implementation/quickstart.md) for comprehensive troubleshooting and advanced usage.
 
 ## Commands
 
