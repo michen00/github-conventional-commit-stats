@@ -78,6 +78,15 @@ Represents a single collection execution with status, timestamps, and aggregate 
 - `completed_at` MUST be null when `status == running`
 - `completed_at` MUST be set when `status in (completed, failed)`
 
+### Referential Integrity Enforcement (FR-012)
+
+The system maintains referential integrity between `Run` and `RepoRecord` entities through **cascade deletion**:
+
+- **On Run Deletion**: When a run is deleted (via `prune` command or retention policy), all associated `RepoRecord` entries with matching `run_id` MUST be deleted atomically
+- **On Validation**: The `validate` command checks that every `RepoRecord.run_id` references an existing `Run.run_id`; orphaned records are reported as validation failures
+- **Atomicity**: Run deletion and associated repo record cleanup MUST occur in a single transaction (TinyDB's atomic write ensures this for JSON files)
+- **Orphan Handling**: Orphaned repo records (run_id not found) are detected during validation but are NOT automatically deleted; manual cleanup via `prune` or data repair is required
+
 ### TinyDB Schema (runs.json)
 
 ```json

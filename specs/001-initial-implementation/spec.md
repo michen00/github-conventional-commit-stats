@@ -124,7 +124,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-003**: System MUST skip merge commits, empty commits, and commits from bot authors when counting
 - **FR-004**: System MUST recognize exactly 11 conventional commit types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
 - **FR-039**: System MUST parse only the first line (subject line) of commit messages when determining conventional commit type; body, footers, and multi-line content MUST be ignored
-- **FR-005**: System MUST detect bot authors using pattern matching against known bot name patterns
+- **FR-005**: System MUST detect bot authors using pattern matching against known bot name patterns (e.g., `*-bot`, `*[bot]`, `dependabot`, `renovate`, `github-actions`). Bot detection patterns are implemented in `parsing.py` and may be extended as needed.
 - **FR-006**: System MUST save progress after each completed repository to enable resumability
 - **FR-007**: System MUST support graceful interruption (SIGINT/SIGTERM) without losing progress
 - **FR-033**: System MUST track breaking change commits (those with `!` indicator) separately from non-breaking commits
@@ -160,7 +160,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - **FR-021**: Visualization MUST display hover tooltips with exact counts and percentages
 - **FR-022**: Visualization MUST respect system color scheme preference and support manual theme toggle
 - **FR-023**: Visualization MUST include a methodology section explaining data collection approach
-- **FR-037**: Visualization MAY include optional secondary charts/sections for breaking/scope data (2×2 matrix, stacked bars, or percentages) without detracting from the primary commit type visualization
+- **FR-037**: Visualization MAY include optional secondary charts/sections for breaking/scope data (2×2 matrix, stacked bars, or percentages) without detracting from the primary commit type visualization. If implemented, these visualizations MUST follow the same accessibility requirements (FR-024 through FR-027) and be placed below the primary chart. Implementation is optional and may be deferred to a future enhancement.
 
 #### Accessibility
 
@@ -173,7 +173,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 - **FR-028**: CI workflow MUST run collection on a monthly schedule (cron: `0 4 1 * *` - 4 AM UTC on the 1st of each month)
 - **FR-029**: CI workflow MUST automatically commit updated data and trigger deployment
-- **FR-030**: CI workflow MUST validate data integrity before committing; if validation fails, the workflow MUST fail the deployment step, prevent committing invalid data, and output clear error messages
+- **FR-030**: CI workflow MUST validate data integrity before committing; if validation fails, the workflow MUST fail the deployment step, prevent committing invalid data, and output clear error messages. Error messages MUST include: (1) the validation check that failed, (2) specific data that violated the check, and (3) actionable guidance. Example format: `✗ Validation failed: Referential integrity check failed. Found 5 orphaned repo records (run_id: run_2026-01-12T04:00:00Z not found in runs.json). Run 'conv-commit-stats validate' for details.`
 - **FR-031**: CI workflow MUST use conventional commit format for automated commits: `chore(data): update conventional commit statistics`
 - **FR-032**: CI workflow MUST support manual triggering via `workflow_dispatch` for ad-hoc updates
 
@@ -187,11 +187,15 @@ The system automatically runs the collection, export, and deployment pipeline mo
 
 - **Export Data**: The visualization-consumable format containing aggregated commit type counts, aggregated breaking/scope counts (breaking_scoped, breaking_unscoped, nonbreaking_scoped, nonbreaking_unscoped), total repositories, total commits, collection timestamp, and methodology metadata.
 
+## Technical Requirements
+
+- **Python Version**: Python ≥3.12 is required (for modern typing features, `StrEnum`, and `tomllib` support). This aligns with the implementation plan's technical context.
+
 ## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
-- **SC-001**: Users can view the complete visualization page and interact with it within 5 seconds of page load
+- **SC-001**: Users can view the complete visualization page and interact with it within 5 seconds of page load (measured from `DOMContentLoaded` event to first user interaction capability, e.g., legend toggle or chart hover response)
 - **SC-002**: Collection command processes up to 1000 repositories within 6 hours when using standard rate limits
 - **SC-003**: Collection can be interrupted at any point and resume without re-processing already-completed repositories
 - **SC-004**: Test coverage for the collection logic is at least 80%

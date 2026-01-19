@@ -326,6 +326,12 @@ Week 3: US3 + US5 + Polish
 - [x] T090 Update `aggregate_run_data()` to sum breaking/scope fields in src/conv_commit_stats/cli.py (depends: T086)
 - [x] T091 Verify all tests pass and counts sum correctly (depends: T089, T090)
 
+### Optional Enhancement: Breaking/Scope Visualizations (FR-037)
+
+**Purpose**: Implement optional secondary visualizations for breaking/scope data as specified in FR-037. This is a MAY requirement and may be deferred to a future enhancement.
+
+- [ ] T092 [P] [US1] [Optional] Implement optional breaking/scope visualization (2×2 matrix, stacked bars, or percentages) in docs/index.html per FR-037, ensuring it does not detract from primary commit type chart and follows accessibility requirements (FR-024-FR-027)
+
 ---
 
 ## Summary
@@ -340,7 +346,8 @@ Week 3: US3 + US5 + Polish
 | Phase 6: US5 (P5)       | 7      | 0              |
 | Phase 7: Polish         | 7      | 4              |
 | Phase 8: Breaking/Scope | 11     | 6              |
-| **Total**               | **91** | **45**         |
+| Optional: FR-037 Viz    | 1      | 1              |
+| **Total**               | **92** | **46**         |
 
 ---
 
