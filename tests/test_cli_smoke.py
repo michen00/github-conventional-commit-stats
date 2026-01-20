@@ -13,7 +13,7 @@ import pytest
 from typer.testing import CliRunner
 
 from conv_commit_stats.cli import app
-from conv_commit_stats.storage import Run, RunStatus, Storage
+from conv_commit_stats.storage import RepoRecord, Run, RunStatus, Storage
 
 runner = CliRunner()
 
@@ -123,7 +123,7 @@ class TestExportCommand:
         self,
         tmp_db_path: Path,
         run_factory: Callable[..., Run],
-        repo_record_factory: Callable[..., object],
+        repo_record_factory: Callable[..., RepoRecord],
         completed_at_datetime: datetime,
     ) -> None:
         """Export command exports data to JSON."""
@@ -205,7 +205,7 @@ class TestValidateCommand:
         self,
         tmp_db_path: Path,
         run_factory: Callable[..., Run],
-        repo_record_factory: Callable[..., object],
+        repo_record_factory: Callable[..., RepoRecord],
         completed_at_datetime: datetime,
     ) -> None:
         """Validate command passes with valid data."""
@@ -326,7 +326,7 @@ class TestValidateErrorPaths:
         self,
         tmp_db_path: Path,
         run_factory: Callable[..., Run],
-        repo_record_factory: Callable[..., object],
+        repo_record_factory: Callable[..., RepoRecord],
         completed_at_datetime: datetime,
         run_id: str,
     ) -> None:

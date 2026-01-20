@@ -297,8 +297,8 @@ def run_factory(
         Function that creates Run objects with defaults, overridden by kwargs
     """
 
-    def _create_run(**kwargs: object) -> Run:
-        defaults = {
+    def _create_run(**kwargs: Any) -> Run:  # noqa: ANN401
+        defaults: dict[str, Any] = {
             'run_id': run_id,
             'started_at': started_at_datetime,
             'status': RunStatus.RUNNING,
@@ -339,8 +339,8 @@ def repo_record_factory(  # noqa: PLR0913
         Function that creates RepoRecord objects with defaults, overridden by kwargs
     """
 
-    def _create_repo_record(**kwargs: object) -> RepoRecord:
-        defaults = {
+    def _create_repo_record(**kwargs: Any) -> RepoRecord:  # noqa: ANN401
+        defaults: dict[str, Any] = {
             'run_id': run_id,
             'repo': repo_name,
             'default_branch': default_branch,

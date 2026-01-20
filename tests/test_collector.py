@@ -237,12 +237,10 @@ class TestRepositoryDiscovery:
             # Mock responses for different star ranges
             call_count = 0
 
-            def search_side_effect(
-                *_args: object, **kwargs: object
-            ) -> list[dict[str, object]]:
+            def search_side_effect(*_args: Any, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
                 nonlocal call_count
                 call_count += 1
-                query = kwargs.get('query', '')
+                query: str = kwargs.get('query', '')
                 if 'stars:10000' in query:
                     return [
                         {'full_name': f'repo-{i}', 'stargazers_count': 15000}
