@@ -110,6 +110,10 @@ class Collector:
             RuntimeError: If another run is already in progress
         """
         # Check for concurrent runs
+        # Note: This check is not atomic with the save operation below. In theory,
+        # two processes could both pass this check and create duplicate runs.
+        # However, this is acceptable for single-machine use (the typical case).
+        # True atomicity would require file locking or database-level constraints.
         running_run = self._storage.get_running_run()
         if running_run is not None:
             msg = (
@@ -364,6 +368,19 @@ class Collector:
             else:
                 head_sha = '0000000'  # Placeholder for repos with no commits
 
+            # Parse created_at with error handling
+            try:
+                created_at = datetime.fromisoformat(repo_data['created_at'])
+            except (ValueError, KeyError) as e:
+                logger.warning(
+                    'Failed to parse repository created_at date, using fallback',
+                    repo=repo_name,
+                    date_value=repo_data.get('created_at'),
+                    error=str(e),
+                )
+                # Use a reasonable fallback (GitHub's founding date)
+                created_at = datetime(2008, 1, 1, tzinfo=UTC)
+
             # Create repo record
             record = RepoRecord(
                 run_id=run_id,
@@ -372,7 +389,7 @@ class Collector:
                 head_commit=head_sha,
                 stars=repo_data['stargazers_count'],
                 language=repo_data.get('language'),
-                created_at=datetime.fromisoformat(repo_data['created_at']),
+                created_at=created_at,
                 license=repo_data.get('license', {}).get('spdx_id'),
                 timestamp=datetime.now(UTC),
                 commits_analyzed=commits_analyzed,
