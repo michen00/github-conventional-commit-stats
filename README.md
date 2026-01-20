@@ -2,7 +2,7 @@
 
 A self-updating GitHub Pages site that visualizes the frequency of conventional commit types across popular public repositories.
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/michen00/github-conventional-commit-stats/ci.yml?style=plastic)](https://github.com/michen00/github-conventional-commit-stats/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/michen00/github-conventional-commit-stats/CI.yml?style=plastic)](https://github.com/michen00/github-conventional-commit-stats/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/michen00/github-conventional-commit-stats?style=plastic)](https://codecov.io/gh/michen00/github-conventional-commit-stats)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=plastic)](CONTRIBUTING.md)
 [![License](https://img.shields.io/github/license/michen00/github-conventional-commit-stats?style=plastic)](LICENSE)
