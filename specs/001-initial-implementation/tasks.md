@@ -330,7 +330,7 @@ Week 3: US3 + US5 + Polish
 
 **Purpose**: Implement optional secondary visualizations for breaking/scope data as specified in FR-037. This is a MAY requirement and may be deferred to a future enhancement.
 
-- [ ] T092 [P] [US1] [Optional] Implement optional breaking/scope visualization (2×2 matrix, stacked bars, or percentages) in docs/index.html per FR-037, ensuring it does not detract from primary commit type chart and follows accessibility requirements (FR-024-FR-027)
+- [x] T092 [P] [US1] [Optional] Implement optional breaking/scope visualization (2×2 matrix, stacked bars, or percentages) in docs/index.html per FR-037, ensuring it does not detract from primary commit type chart and follows accessibility requirements (FR-024-FR-027)
 
 ---
 

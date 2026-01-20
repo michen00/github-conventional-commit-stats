@@ -106,6 +106,10 @@ The system automatically runs the collection, export, and deployment pipeline mo
   - System saves progress and sleeps until reset, or can be resumed later
 - What happens when data files are corrupted?
   - Validate command detects issues and reports specific errors
+- What happens when commit messages are malformed (don't match conventional commit pattern)?
+  - Malformed commits are skipped and not counted (regex pattern matching determines validity)
+- What happens when checkpoint save fails (disk full, permission error)?
+  - System logs error and continues with next repository; progress may be lost for current repo but previous repos remain saved
 - What happens when a user accesses the page on a slow connection?
   - Visualization gracefully loads with placeholder until data arrives
 - What happens when data.json fails to load (404, network error, invalid JSON)?
@@ -120,7 +124,7 @@ The system automatically runs the collection, export, and deployment pipeline mo
 #### Data Collection
 
 - **FR-001**: System MUST discover repositories using GitHub Search API with filters: ≥3 stars, pushed within rolling 365-day window from collection start, public, not archived, not a fork, has license
-- **FR-002**: System MUST analyze up to 100 conventional commits per repository from the last year
+- **FR-002**: System MUST analyze up to 100 conventional commits per repository from the last year (selected in reverse chronological order, most recent first, as returned by GitHub API)
 - **FR-003**: System MUST skip merge commits, empty commits, and commits from bot authors when counting
 - **FR-004**: System MUST recognize exactly 11 conventional commit types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
 - **FR-039**: System MUST parse only the first line (subject line) of commit messages when determining conventional commit type; body, footers, and multi-line content MUST be ignored
@@ -212,6 +216,6 @@ The system automatically runs the collection, export, and deployment pipeline mo
 - GitHub API remains available with current rate limits and endpoint structure
 - Conventional commit format follows the widely-adopted specification (lowercase types, colon+space separator)
 - Bot detection patterns cover the most common CI/automation tools (dependabot, renovate, github-actions, etc.)
-- Users have a modern browser with JavaScript enabled for the visualization
+- Users have a modern browser with JavaScript enabled for the visualization (Chrome/Edge 90+, Firefox 88+, Safari 14+, or equivalent with ES2020 support)
 - GitHub Pages remains available for hosting static content
 - A Personal Access Token or GITHUB_TOKEN is available for API access

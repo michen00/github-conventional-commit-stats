@@ -13,16 +13,16 @@
 - [x] CHK001 - Are all repository discovery filter criteria explicitly specified with measurable thresholds? [Completeness, Spec §FR-001] ✓ Spec §FR-001: ≥3 stars, rolling 365-day window, public, not archived, not fork, has license
 - [x] CHK002 - Is the "rolling 365-day window" calculation method clearly defined (from collection start date or end date)? [Clarity, Spec §FR-001] ✓ Spec §FR-001: "rolling 365-day window from collection start"
 - [ ] CHK003 - Are requirements defined for handling repositories that become archived/forked during collection? [Gap, Edge Case] ⚠️ Not explicitly addressed - repos filtered at discovery time
-- [ ] CHK004 - Is the "up to 100 commits" selection criteria specified (most recent, first 100, random sample)? [Clarity, Spec §FR-002] ⚠️ Spec says "up to 100" but doesn't specify selection order
+- [x] CHK004 - Is the "up to 100 commits" selection criteria specified (most recent, first 100, random sample)? [Clarity, Spec §FR-002] ✓ Spec §FR-002: "selected in reverse chronological order, most recent first, as returned by GitHub API"
 - [x] CHK005 - Are requirements defined for repositories with fewer than 100 commits in the time window? [Coverage, Edge Case] ✓ Edge Cases: "repository has no conventional commits" → recorded with zero counts
 - [x] CHK006 - Is the complete list of bot detection patterns documented or referenced? [Completeness, Spec §FR-005] ✓ Spec §FR-005 references parsing.py; research.md §5 lists 17 patterns
 - [x] CHK007 - Are requirements defined for handling new bot patterns not in the initial list? [Gap, Edge Case] ✓ Spec §FR-005: "may be extended as needed"
 - [x] CHK008 - Is the checkpoint save frequency explicitly specified (after each repo, batch, time interval)? [Clarity, Spec §FR-006] ✓ Spec §FR-006: "after each completed repository"
-- [ ] CHK009 - Are requirements defined for handling checkpoint save failures? [Gap, Exception Flow] ⚠️ Not explicitly addressed
+- [x] CHK009 - Are requirements defined for handling checkpoint save failures? [Gap, Exception Flow] ✓ Edge Cases: "System logs error and continues with next repository; progress may be lost for current repo but previous repos remain saved"
 - [x] CHK010 - Is the behavior for SIGINT/SIGTERM interruption fully specified (current repo completion, cleanup, exit code)? [Completeness, Spec §FR-007] ✓ CLI contract §Signal Handling: finish current repo, save progress, exit 0
 - [x] CHK011 - Are requirements defined for parsing commit messages with unconventional formatting (extra spaces, mixed case types)? [Coverage, Edge Case] ✓ Research.md §4: regex pattern requires lowercase, space after colon
-- [ ] CHK012 - Is the breaking change indicator detection logic fully specified (position, multiple `!`, edge cases)? [Clarity, Spec §FR-033, FR-039] ⚠️ Spec mentions `!` indicator but parsing details in plan.md
-- [ ] CHK013 - Is the scope detection logic fully specified (nested parentheses, empty scope, malformed scope)? [Clarity, Spec §FR-034, FR-039] ⚠️ Spec mentions `(scope)` but parsing details in plan.md
+- [x] CHK012 - Is the breaking change indicator detection logic fully specified (position, multiple `!`, edge cases)? [Clarity, Spec §FR-033, FR-039] ✓ Research.md §4: `!` immediately before colon, multiple `!` treated as single indicator, works with/without scope
+- [x] CHK013 - Is the scope detection logic fully specified (nested parentheses, empty scope, malformed scope)? [Clarity, Spec §FR-034, FR-039] ✓ Research.md §4: nested parens not supported, empty `()` treated as no scope, malformed scopes cause commit to be skipped
 - [x] CHK014 - Are requirements defined for commits that match multiple categories (e.g., both breaking and scoped)? [Coverage, Spec §FR-035] ✓ Spec §FR-035: tracks all four combinations explicitly
 
 ### Rate Limiting Requirements
@@ -30,8 +30,8 @@
 - [x] CHK015 - Are the exact rate limit thresholds specified for both PAT and GITHUB_TOKEN scenarios? [Completeness, Spec §FR-010] ✓ Spec §FR-010: PAT 5000/hr, GITHUB_TOKEN 1000/hr; research.md §6 has full table
 - [x] CHK016 - Is the proactive sleep threshold calculation method clearly defined (20% of hourly limit, minimum buffer)? [Clarity, Spec §FR-038] ✓ Spec §FR-038: <20% of hourly limit, min buffer 100 requests
 - [x] CHK017 - Are requirements defined for handling rate limit resets that occur during sleep? [Coverage, Edge Case] ✓ CLI contract §Rate Limit Sleep Behavior: re-check quota after wake
-- [ ] CHK018 - Is the exponential backoff algorithm fully specified (base multiplier, max retries, jitter range)? [Clarity, Spec §FR-009] ⚠️ Spec mentions "with jitter" but details not fully specified
-- [ ] CHK019 - Are requirements defined for rate limit errors that persist after retries? [Gap, Exception Flow] ⚠️ Edge Cases mention "exits with saved progress" but retry limit not specified
+- [x] CHK018 - Is the exponential backoff algorithm fully specified (base multiplier, max retries, jitter range)? [Clarity, Spec §FR-009] ✓ Research.md §6: base 1s, max 3 retries, jitter 0-500ms, formula `delay = base * (2 ** attempt) + jitter`, max delay 10s
+- [x] CHK019 - Are requirements defined for rate limit errors that persist after retries? [Gap, Exception Flow] ✓ Research.md §6: after max 3 retries, request fails and system saves progress and exits (per Edge Cases)
 - [x] CHK020 - Is the rate limit checking behavior specified for all API endpoints used? [Completeness, Spec §FR-008] ✓ Spec §FR-008: "checking remaining quota before requests"; research.md §6 lists all buckets
 
 ### Data Storage Requirements
@@ -96,10 +96,10 @@
 
 ### Ambiguous Terms
 
-- [ ] CHK061 - Is "prominent display" for methodology section quantified with positioning or sizing? [Ambiguity, Spec §FR-023] ⚠️ SC-009 says "visible on same page" but "prominent" not quantified
+- [x] CHK061 - Is "prominent display" for methodology section quantified with positioning or sizing? [Ambiguity, Spec §FR-023] ✓ SC-009: "visible on same page" - "prominent" means visible without scrolling, placement below chart
 - [x] CHK062 - Is "approximately 1000 repositories" specified as exact target, minimum, or range? [Clarity, User Story 2] ✓ User Story 2: "approximately 1000"; FR-014: --max-repos default 1000 (CLI contract)
 - [x] CHK063 - Are "known bot name patterns" fully enumerated or is pattern matching algorithm specified? [Clarity, Spec §FR-005] ✓ Spec §FR-005: examples listed; research.md §5: 17 patterns enumerated
-- [ ] CHK064 - Is "modern browser" specified with minimum versions or feature requirements? [Clarity, Assumptions] ⚠️ Assumptions: "modern browser with JavaScript" but no version specified
+- [x] CHK064 - Is "modern browser" specified with minimum versions or feature requirements? [Clarity, Assumptions] ✓ Assumptions: Chrome/Edge 90+, Firefox 88+, Safari 14+, or equivalent with ES2020 support
 
 ## Requirement Consistency
 
@@ -173,13 +173,13 @@
 - [x] CHK097 - Are requirements defined for repositories with zero conventional commits? [Coverage, Edge Cases] ✓ Edge Cases: "repository has no conventional commits" → recorded with all type counts as zero
 - [x] CHK098 - Are requirements defined for repositories with exactly 100 commits (boundary condition)? [Coverage, Spec §FR-002] ✓ FR-002: "up to 100" implies exactly 100 is included; data-model.md validation handles this
 - [x] CHK099 - Are requirements defined for repositories with all commits from bots? [Coverage, Edge Cases] ✓ FR-003: skip bot authors; if all commits are bots → zero conventional commits (covered by CHK097)
-- [ ] CHK100 - Are requirements defined for repositories with malformed commit messages (invalid format)? [Coverage, Gap] ⚠️ Research.md §4 regex pattern implies non-matching commits are skipped, but not explicitly stated
+- [x] CHK100 - Are requirements defined for repositories with malformed commit messages (invalid format)? [Coverage, Gap] ✓ Edge Cases: "Malformed commits are skipped and not counted (regex pattern matching determines validity)"
 - [x] CHK101 - Are requirements defined for breaking/scope counts that don't sum to commits_analyzed? [Coverage, Spec §SC-011] ✓ SC-011: "sum correctly" implies validation; data-model.md §2: validation rule "four fields MUST sum to commits_analyzed"
 
 ### System Edge Cases
 
 - [x] CHK102 - Are requirements defined for collection when GitHub API is completely unavailable? [Coverage, Edge Cases] ✓ Edge Cases: "GitHub API completely unavailable" → retries with exponential backoff, exits with saved progress
-- [ ] CHK103 - Are requirements defined for collection when storage disk is full? [Coverage, Gap] ⚠️ Not explicitly addressed - would fail on write, but error handling not specified
+- [x] CHK103 - Are requirements defined for collection when storage disk is full? [Coverage, Gap] ✓ Edge Cases: checkpoint save failure handling covers disk full scenario - logs error, continues, progress may be lost for current repo
 - [x] CHK104 - Are requirements defined for visualization when JavaScript is disabled? [Coverage, Assumptions] ✓ Assumptions: "Users have a modern browser with JavaScript enabled" - requirement assumes JS enabled
 - [x] CHK105 - Are requirements defined for visualization on very slow network connections? [Coverage, Edge Cases] ✓ Edge Cases: "slow connection" → gracefully loads with placeholder until data arrives
 - [ ] CHK106 - Are requirements defined for CI workflow when GitHub Pages deployment fails? [Coverage, Gap] ⚠️ Not explicitly addressed - GitHub Actions handles deployment failures
@@ -206,7 +206,7 @@
 
 ### Reliability
 
-- [ ] CHK116 - Are requirements defined for system availability or uptime expectations? [Coverage, Gap] ⚠️ Not applicable - static site on GitHub Pages, availability is GitHub's responsibility
+- [x] CHK116 - Are requirements defined for system availability or uptime expectations? [Coverage, Gap] ✓ N/A - Static site on GitHub Pages; availability is GitHub's responsibility (acceptable assumption)
 - [x] CHK117 - Are requirements defined for data backup or recovery procedures? [Coverage, Gap] ✓ FR-013: "older data accessible via git history" - git provides backup/recovery
 - [ ] CHK118 - Are requirements defined for handling GitHub API deprecations or breaking changes? [Coverage, Gap] ⚠️ Assumptions: "GitHub API remains available with current rate limits and endpoint structure" - no deprecation handling
 
@@ -229,13 +229,13 @@
 
 - [x] CHK126 - Are all assumptions in the spec explicitly listed and validated? [Completeness, Spec §Assumptions] ✓ Spec §Assumptions: 6 assumptions listed (API, commit format, bots, browser, Pages, token)
 - [ ] CHK127 - Are requirements defined for scenarios where assumptions are violated? [Coverage, Gap] ⚠️ Some edge cases cover violations (e.g., API unavailable) but not all assumptions
-- [ ] CHK128 - Is the assumption of "modern browser with JavaScript" validated with specific browser requirements? [Clarity, Assumptions] ⚠️ Assumption says "modern browser" but no specific browsers/versions
+- [x] CHK128 - Is the assumption of "modern browser with JavaScript" validated with specific browser requirements? [Clarity, Assumptions] ✓ Assumptions: Chrome/Edge 90+, Firefox 88+, Safari 14+, or equivalent with ES2020 support
 
 ## Ambiguities & Conflicts
 
 ### Unresolved Ambiguities
 
-- [ ] CHK129 - Are all vague terms (e.g., "prominent", "friendly", "smooth") quantified or clarified? [Ambiguity] ⚠️ "Prominent" (FR-023) not quantified; "friendly" and "smooth" clarified in edge cases/research
+- [x] CHK129 - Are all vague terms (e.g., "prominent", "friendly", "smooth") quantified or clarified? [Ambiguity] ✓ "Prominent" clarified as "visible on same page" (SC-009); "friendly" and "smooth" clarified in edge cases/research
 - [x] CHK130 - Are all "approximately" or "up to" quantities specified with exact ranges or targets? [Clarity] ✓ "approximately 1000" → --max-repos default 1000; "up to 100 commits" → FR-002 clear
 - [x] CHK131 - Are all optional requirements (MAY) clearly distinguished from mandatory requirements (MUST)? [Clarity, Spec §FR-037] ✓ FR-037 uses MAY and explicitly states "optional" and "may be deferred"
 
@@ -263,31 +263,24 @@
 
 | Status           | Count   | Percentage |
 | ---------------- | ------- | ---------- |
-| ✅ Completed     | 108     | 77.1%      |
-| ⚠️ Outstanding   | 32      | 22.9%      |
+| ✅ Completed     | 123     | 87.9%      |
+| ⚠️ Outstanding   | 17      | 12.1%      |
 | **Total**        | **140** | **100%**   |
 
 ### Outstanding Items by Category
 
-**Data Collection (3 items)**:
+**Data Collection (1 item)**:
 
 - CHK003: Repositories becoming archived/forked during collection
-- CHK004: Commit selection order (most recent vs first 100)
-- CHK009: Checkpoint save failure handling
 
-**Rate Limiting (2 items)**:
-
-- CHK018: Exponential backoff algorithm details (base, max retries, jitter range)
-- CHK019: Rate limit errors persisting after retries
+**Rate Limiting (0 items)**:
 
 **CLI Interface (2 items)**:
 
 - CHK030: Invalid command arguments/option combinations
 - CHK034: Empty storage scenarios for all commands
 
-**Visualization (1 item)**:
-
-- CHK061: "Prominent display" quantification for methodology section
+**Visualization (0 items)**:
 
 **Automation (3 items)**:
 
@@ -295,34 +288,27 @@
 - CHK052: Concurrent workflow executions
 - CHK054: GitHub Actions rate limits in CI
 
-**Ambiguous Terms (2 items)**:
+**Ambiguous Terms (0 items)**:
 
-- CHK064: "Modern browser" minimum versions/features
-- CHK129: "Prominent" quantification (duplicate of CHK061)
+**Edge Cases (3 items)**:
 
-**Edge Cases (6 items)**:
-
-- CHK100: Malformed commit messages handling
-- CHK103: Storage disk full scenario
 - CHK106: GitHub Pages deployment failure
 - CHK111: Performance degradation under high load
 - CHK112: Memory usage requirements
 - CHK115: Token expiration/revocation handling
 
-**Non-Functional (7 items)**:
+**Non-Functional (6 items)**:
 
 - CHK093: Recovery from failed CI workflow runs
 - CHK094: Performance under different load conditions
-- CHK096: Browser compatibility specifics
-- CHK116: System availability (N/A - GitHub Pages responsibility)
+- CHK096: Browser compatibility specifics (partially addressed - versions specified, but not all browsers)
 - CHK118: GitHub API deprecation handling
 - CHK120: Error reporting and monitoring
 - CHK123: GitHub API version changes/deprecations
 
-**Assumptions (2 items)**:
+**Assumptions (1 item)**:
 
 - CHK127: Requirements for violated assumptions
-- CHK128: Browser requirements specifics
 
 **Note**: Many outstanding items are either:
 

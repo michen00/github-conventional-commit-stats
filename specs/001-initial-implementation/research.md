@@ -92,6 +92,12 @@ data/
 ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([^)]*\))?!?: .+$
 ```
 
+**Parsing Details**:
+
+- **Breaking Change Detection**: The `!` indicator MUST appear immediately before the colon (e.g., `feat!: breaking change`). Multiple `!` characters are treated as a single breaking change indicator. The `!` can appear with or without a scope (e.g., `feat(api)!: breaking` or `feat!: breaking`).
+- **Scope Detection**: Scope is detected via parentheses `(scope)` immediately after the commit type. Nested parentheses are not supported (regex `[^)]*` prevents nesting). Empty scope `()` is treated as no scope. Malformed scopes (e.g., unmatched parentheses) cause the commit to not match the pattern and be skipped.
+- **Commit Selection**: Commits that do not match the regex pattern are skipped (not counted as conventional commits). This includes commits with mixed-case types, missing space after colon, or malformed scopes.
+
 **Rationale**:
 
 - Case-sensitive lowercase matches official conventional commits spec
@@ -157,6 +163,16 @@ BOT_PATTERNS = [
 2. If remaining < 10, calculate sleep time from `X-RateLimit-Reset`
 3. Sleep proactively before next request
 4. On 403/429, parse reset time and sleep with backoff
+
+**Exponential Backoff Details** (for transient failures):
+
+- **Base Delay**: 1 second
+- **Max Retries**: 3 attempts per request
+- **Backoff Formula**: `delay = base_delay * (2 ** attempt_number) + random_jitter`
+- **Jitter Range**: 0-500ms (random uniform distribution)
+- **Max Delay**: 10 seconds (capped to prevent excessive waits)
+- **Example**: First retry after 1-1.5s, second after 2-2.5s, third after 4-4.5s
+- **After Max Retries**: If all retries fail, the request is considered failed and the system saves progress and exits (per Edge Cases: "exits with saved progress")
 
 **Rate Limit Buckets**:
 
