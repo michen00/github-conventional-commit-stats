@@ -8,7 +8,7 @@ This module wraps TinyDB with typed access to three tables:
 See §3 of the spec for schemas.
 """
 
-__all__ = ("Storage",)
+__all__ = ('Storage',)
 
 
 class Storage:
