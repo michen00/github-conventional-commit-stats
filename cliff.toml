@@ -10,13 +10,37 @@ breaking_always_bump_major = false
 # https://keats.github.io/tera/docs/#introduction
 header = """
 <!-- markdownlint-configure-file { "no-duplicate-heading": false } -->\n
-\n
 # Changelog\n
 All notable changes will be documented in this file. See [conventional commits](https://www.conventionalcommits.org) for commit guidelines.\n
 The format is based on [Keep a Changelog](https://keepachangelog.com) and this project adheres to [Semantic Versioning](https://semver.org).\n
 """
 
 body = """
+{% macro get_github_username(commit) -%}
+    {% set github_username = "" %}\
+    {% if commit.remote.username is defined and commit.remote.username %}\
+        {% set github_username = commit.remote.username %}\
+    {% elif commit.author.email is containing("@users.noreply.github.com") %}\
+        {% set email_parts = commit.author.email | split(pat="@") %}\
+        {% set username_part = email_parts[0] | split(pat="+") | last %}\
+        {% set github_username = username_part %}\
+    {% endif %}\
+    {{ github_username }}
+{%- endmacro -%}
+{% macro author_link(commit) -%}
+    {% set github_username = self::get_github_username(commit=commit) %}\
+    {% if github_username != "" %}\
+        [@{{ github_username }}](https://github.com/{{ github_username }})\
+    {% elif commit.author.name and commit.author.name != "" %}\
+        {% if commit.author.email and commit.author.email != "" %}\
+            [{{ commit.author.name }}](mailto:{{ commit.author.email }})\
+        {% else %}\
+            {{ commit.author.name }}\
+        {% endif %}\
+    {% elif commit.author.email and commit.author.email != "" %}\
+        [{{ commit.author.email }}](mailto:{{ commit.author.email }})\
+    {% endif %}
+{%- endmacro -%}
 {% if version %}\
     {% if previous.version %}\
         ## [{{ version | trim_start_matches(pat="v") }}]($REPO/compare/{{ previous.version }}..{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
@@ -26,23 +50,58 @@ body = """
 {% else %}\
     ## [Unreleased]
 {% endif %}\
-{% for group, commits in commits | unique(attribute="message") | group_by(attribute="group") %}
+{% for group, group_commits in commits | filter(attribute="merge_commit", value=false) | unique(attribute="message") | group_by(attribute="group") %}
     ### {{ group | striptags | trim | upper_first }}
-    {% for commit in commits
+    {% for commit in group_commits
     | filter(attribute="scope")
     | sort(attribute="scope") %}
-        - **({{commit.scope}})**{% if commit.breaking %} [**breaking**]{% endif %} \
-            {{ commit.message }} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})) - [{{ commit.author.name }}](mailto:{{ commit.author.email }})
+        - **({{commit.scope}})**{% if commit.breaking %} ❗{% endif %} \
+            {{ commit.message | split(pat="\n") | first }} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})) - \
+            {{ self::author_link(commit=commit) }}
     {%- endfor -%}
     {% raw %}\n{% endraw %}\
-    {%- for commit in commits %}
+    {%- for commit in group_commits %}
         {%- if commit.scope -%}
         {% else -%}
-            - {% if commit.breaking %} [**breaking**]{% endif %}\
-                {{ commit.message }} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})) - [{{ commit.author.name }}](mailto:{{ commit.author.email }})
+            - {% if commit.breaking %} ❗{% endif %}\
+                {{ commit.message | split(pat="\n") | first }} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})) - \
+                {{ self::author_link(commit=commit) }}
         {% endif -%}
     {% endfor -%}
-{% endfor %}\n
+{% endfor %}
+{% set unique_authors = commits | map(attribute="author.name") | unique %}\
+{% if unique_authors | length > 0 %}\
+    ### 👥 Contributors\
+    {% raw %}\n{% endraw %}
+    {% for author_name in unique_authors %}\
+        {% if not author_name is containing("[bot]") %}\
+            {% set author_commits = commits | filter(attribute="author.name", value=author_name) %}\
+            {% set last_commit = author_commits | last %}\
+            {% set author_email = last_commit.author.email %}\
+            {% set github_username = self::get_github_username(commit=last_commit) %}\
+            {% if author_name and author_name != "" %}\
+                {% if github_username != "" %}\
+                    {% if author_email != "" %}\
+                - [@{{ github_username }}](https://github.com/{{ github_username }}) | [{{ author_name }}](mailto:{{ author_email }})
+                    {% else %}\
+                - [@{{ github_username }}](https://github.com/{{ github_username }}) | {{ author_name }}
+                    {% endif %}\
+                {% elif author_email != "" %}\
+                - [{{ author_name }}](mailto:{{ author_email }})
+                {% else %}\
+                - {{ author_name }}
+                {% endif %}\
+            {% elif author_email != "" %}\
+                {% if github_username != "" %}\
+                - [@{{ github_username }}](https://github.com/{{ github_username }}) | [{{ author_email }}](mailto:{{ author_email }})
+                {% else %}\
+                - [{{ author_email }}](mailto:{{ author_email }})
+                {% endif %}\
+            {% endif %}\
+        {% endif %}\
+    {% endfor %}\
+{% endif %}\
+{% raw %}\n{% endraw %}
 """
 
 footer = """
@@ -55,8 +114,12 @@ trim = true
 # RegEx-based postprocessors for modifying the changelog.
 postprocessors = [
     # Replace the placeholder with a URL.
-    { pattern = '<REPO>', replace = "https://github.com/michen00/github-conventional-commit-stats" },
-    { pattern = '\$REPO', replace = "https://github.com/michen00/github-conventional-commit-stats" },
+    { pattern = '<REPO>', replace = "https://github.com/michen00/invisible-squiggles" },
+    { pattern = '\$REPO', replace = "https://github.com/michen00/invisible-squiggles" },
+    # Link commit hashes in scopes **(hash)** - preserve parentheses
+    { pattern = '\*\*\(([a-f0-9]{7,})\)\*\*', replace = "**([`${1}`](https://github.com/michen00/invisible-squiggles/commit/${1}))**" },
+    # Replace work email with personal email
+    { pattern = 'michael\.chen@aicadium\.ai', replace = "michael.chen.0@gmail.com" },
 ]
 
 # render body even when there are no releases to process
@@ -82,16 +145,12 @@ split_commits = false
 
 # RegEx-based parsers for modifying commit messages prior to further processing.
 commit_preprocessors = [
-    # Replace issue numbers with link templates to be updated in `changelog.postprocessors`.
-    # { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](<REPO>/issues/${2}))" },
-    # Check spelling of the commit message using https://github.com/crate-ci/typos.
-    # If the spelling is incorrect, it will be fixed automatically.
-    # { pattern = '.*', replace_command = 'typos --write-changes -' },
-    # Hyperlink commit links, with short commit hash as description.
-    # { pattern = "<REPO>/commit/([a-f0-9]{7})[a-f0-9]*", replace = "commit [${1}](${0})" },
+    # Link issue/PR numbers (#123) - GitHub uses same URL space for both
+    { pattern = '#([0-9]+)', replace = "[#${1}](<REPO>/issues/${1})" },
 ]
 
 commit_parsers = [
+    # Existing skips (unchanged)
     { message = "^\\d+\\.\\d+\\.\\d+$", skip = true },
     { message = "^chore\\(release\\): prepare for", skip = true },
     { message = "^chore\\(deps.*\\)", skip = true },
@@ -100,18 +159,24 @@ commit_parsers = [
     { message = "^chore: merge", skip = true },
     { message = "^docs\\(blame\\)", skip = true },
     { message = "^docs: update .git-blame-ignore-revs", skip = true },
+
+    # User-facing categories (KEEP)
     { message = "^feat", group = "<!-- 00 -->✨ Features" },
     { message = "^fix", group = "<!-- 01 -->🐛 Fixes" },
     { message = "^perf", group = "<!-- 02 -->⚡ Performance" },
-    { message = "^test", group = "<!-- 03 -->🧪 Testing" },
-    { message = "^ci", group = "<!-- 04 -->💚 Continuous Integration" },
-    { message = "^build", group = "<!-- 05 -->👷 Build" },
-    { message = "^doc", group = "<!-- 06 -->📝 Documentation" },
-    { message = "^refactor", group = "<!-- 07 -->♻️ Refactor" },
-    { message = "^style", group = "<!-- 08 -->🎨 Styling" },
-    { message = "^chore", group = "<!-- 09 -->⚙️ Miscellaneous Tasks" },
-    { message = "^revert", group = "<!-- 10 -->⏪️ Revert" },
-    { message = "^.*", group = "<!-- 11 -->💼 Other" },
+    { message = "^revert", group = "<!-- 03 -->⏪️ Revert" },
+
+    # Internal categories (SKIP); breaking changes are allowed
+    { message = "^doc", group = "<!-- 04 -->📝 Documentation", skip = true },
+    { message = "^build", group = "<!-- 05 -->👷 Build", skip = true },
+    { message = "^ci", group = "<!-- 06 -->💚 Continuous Integration", skip = true },
+    { message = "^test", group = "<!-- 07 -->🧪 Tests", skip = true },
+    { message = "^refactor", group = "<!-- 08 -->♻️ Refactor", skip = true },
+    { message = "^style", group = "<!-- 09 -->🎨 Styling", skip = true },
+    { message = "^chore", group = "<!-- 10 -->⚙️ Miscellaneous Tasks", skip = true },
+
+    # Catch-all for non-conventional commits
+    { message = "^.*", group = "<!-- 11 -->🔍 Other", skip = false },
 ]
 
 protect_breaking_commits = true
