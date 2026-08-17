@@ -16,7 +16,7 @@ default_stages: [pre-commit]
 repos:
   # maintenance
   - repo: https://github.com/pre-commit/sync-pre-commit-deps
-    rev: v0.0.3
+    rev: v0.0.5
     hooks:
       - id: sync-pre-commit-deps
 
@@ -39,7 +39,7 @@ repos:
 
   # git commit policy
   - repo: https://github.com/michen00/custom-commit-hooks
-    rev: v0.0.1
+    rev: v0.1.1
     hooks:
       - id: enhance-scope # commit-msg
       - id: conventional-merge-commit # prepare-commit-msg
@@ -69,12 +69,12 @@ repos:
       - id: requirements-txt-fixer
       - id: trailing-whitespace
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.7.4
+    rev: v3.9.6
     hooks:
       - id: prettier
         types_or: [css, html, javascript, json, scss, yaml]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.10
+    rev: v0.16.3
     hooks:
       - id: ruff-check
         types_or: [jupyter, pyi, python, toml]
@@ -82,11 +82,11 @@ repos:
       - id: ruff-format
         types_or: [jupyter, pyi, python, toml]
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.12.0-2
+    rev: v3.13.1-1
     hooks:
       - id: shfmt
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.47.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint
         args: ["--fix"]
@@ -110,16 +110,16 @@ repos:
       - id: name-tests-test
         args: [--pytest-test-first]
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
         args: [--strict]
   - repo: https://github.com/crate-ci/typos
-    rev: v1.41.0
+    rev: v1
     hooks:
       - id: typos
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.3
     hooks:
       - id: codespell
         args: ["--skip", "*.ipynb"]
@@ -128,13 +128,13 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.10
+    rev: v1.7.12
     hooks:
       - id: actionlint
 
   # static type analysis
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.1
+    rev: v2.3.1
     hooks:
       - id: mypy
         args: ["--config-file=pyproject.toml", "--install-types", "--non-interactive"]
@@ -148,12 +148,12 @@ repos:
 
   # configuration validation
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.24.1
+    rev: v0.25
     hooks:
       - id: validate-pyproject
         additional_dependencies: ["validate-pyproject-schema-store[all]"]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.36.0
+    rev: 0.38.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
